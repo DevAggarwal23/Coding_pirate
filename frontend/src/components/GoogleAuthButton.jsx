@@ -83,12 +83,23 @@ export function GoogleAuthButton({
 
     async function initGis() {
       try {
-        const config = await getAuthConfig();
-        if (isMounted) {
-          setGoogleClientId(config.google_client_id || "");
+        // Primary: use VITE_GOOGLE_CLIENT_ID from build-time env (always available)
+        const envClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+        if (envClientId && isMounted) {
+          setGoogleClientId(envClientId);
+        } else {
+          // Fallback: fetch from backend config endpoint
+          try {
+            const config = await getAuthConfig();
+            if (isMounted) {
+              setGoogleClientId(config.google_client_id || "");
+            }
+          } catch (backendErr) {
+            console.warn("Backend auth config unavailable:", backendErr.message);
+          }
         }
 
-        // Check if script already on page
+        // Check if GIS script already on page
         if (window.google?.accounts?.id) {
           if (isMounted) setIsGisLoaded(true);
           return;
