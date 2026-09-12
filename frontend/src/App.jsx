@@ -2630,23 +2630,53 @@ function App() {
 
   const t = translations[language || "en"];
 
-  const [user, setUser] = useState({
-    name: "",
-    email: "",
-    password: "",
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("scheme_saathi_user_info");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      name: "",
+      email: "",
+      password: "",
+    };
   });
 
-  const [profile, setProfile] = useState({
-    age: "",
-    category: "",
-    income: "",
-    occupation: "",
-    businessType: "",
-    ideaCategory: "",
-    idea: "",
-    location: "",
-    project_cost: "",
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem("scheme_saathi_user_profile");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      age: "",
+      category: "",
+      income: "",
+      occupation: "",
+      businessType: "",
+      ideaCategory: "",
+      idea: "",
+      location: "",
+      project_cost: "",
+    };
   });
+
+  // Auto-persist profile state to localStorage
+  useEffect(() => {
+    if (profile && typeof profile === "object") {
+      try {
+        localStorage.setItem("scheme_saathi_user_profile", JSON.stringify(profile));
+      } catch {}
+    }
+  }, [profile]);
+
+  // Auto-persist user state to localStorage
+  useEffect(() => {
+    if (user && user.email) {
+      try {
+        localStorage.setItem("scheme_saathi_user_info", JSON.stringify(user));
+      } catch {}
+    }
+  }, [user]);
 
   const [profileStep, setProfileStep] = useState(0);
   const [voiceRequested, setVoiceRequested] = useState(false);
@@ -2671,10 +2701,12 @@ function App() {
   const [isMatchingLoading, setIsMatchingLoading] = useState(false);
   const [matchingError, setMatchingError] = useState("");
 
-  const handleRunMatching = async (profileData = profile) => {
+  const handleRunMatching = async (profileData = profile, targetScreen = "dashboard") => {
     setIsMatchingLoading(true);
     setMatchingError("");
-    setScreen("loading");
+    if (targetScreen === "loading" || targetScreen === "results") {
+      setScreen("loading");
+    }
 
     try {
       const payload = {
@@ -2685,6 +2717,10 @@ function App() {
         project_cost: profileData.project_cost ? Number(profileData.project_cost) : 500000,
       };
 
+      try {
+        localStorage.setItem("scheme_saathi_user_profile", JSON.stringify(profileData));
+      } catch {}
+
       const res = await fetchMatchedSchemes(payload);
       if (res && res.auto_matched && res.auto_matched.length > 0) {
         setMatchedResults(res);
@@ -2693,7 +2729,7 @@ function App() {
       console.warn("Backend matching notice (using fallback schemes catalog):", err);
     } finally {
       setIsMatchingLoading(false);
-      setScreen("results");
+      setScreen(targetScreen);
     }
   };
 
@@ -3109,7 +3145,7 @@ function App() {
             setFindSchemesMode(true);
             handleRunMatching(profile);
           }}
-          onFinish={() => handleRunMatching(profile)}
+          onFinish={() => handleRunMatching(profile, "dashboard")}
           onAdmin={() => setScreen("admin")}
           onOpenScheme={(scheme) => { setSelectedScheme(scheme); setScreen("detail"); }}
           onHandoffToDetail={(plan) => {
@@ -3172,7 +3208,7 @@ function App() {
           }}
           onFinish={() => {
             setFindSchemesMode(false);
-            handleRunMatching(profile);
+            handleRunMatching(profile, "dashboard");
           }}
         />
       )}
@@ -3618,7 +3654,7 @@ function DashboardScreen({
     return (
     <>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ color: c.muted, fontSize: 11, fontWeight: 750 }}>{calc.kicker}</div>
+        <div style={{ color: c.primary, fontSize: 11, fontWeight: 750 }}>{calc.kicker}</div>
         <h1 style={{ fontSize: 30, margin: "5px 0 4px", color: c.text }}>{calc.title}</h1>
         <p style={{ color: c.muted, fontSize: 13 }}>{calc.subtitle}</p>
       </div>
@@ -3655,78 +3691,400 @@ function DashboardScreen({
   );
   };
 
-  const renderDashboard = () => (
-    <>
-      <div style={{ textAlign: "center", marginBottom: 22 }}>
-        <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: .7 }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).dash}</div>
-        <h1 style={{ fontSize: 30, margin: "7px 0 5px", color: c.text }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).welcome}, {user.name || "Guest User"}</h1>
-        <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).tools}</p>
-      </div>
+  const renderDashboard = () => {
+    const hasProfile = Boolean(
+      profile.category || profile.income || profile.location || profile.occupation || profile.businessType
+    );
+    const topRecommendations = Array.isArray(results) ? results.slice(0, 3) : [];
+    const copy = DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en;
 
-      {/* Voice entry point with Interactive 3D AI Orb */}
-      {!questionsStarted && (
-        <div className="glass" style={{ borderRadius: 24, padding: "34px 28px", maxWidth: 820, margin: "0 auto 24px", textAlign: "center", border: `1px solid ${c.border}` }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-            <AiOrb size="md" state={listening ? "LISTENING" : "IDLE"} interactive={true} onClick={() => {
-              setVoiceError("");
-              setHeardText("");
-              setQuestionsStarted(true);
-              setProfileStep(0);
-            }} />
+    return (
+      <div className="fade" style={{ display: "grid", gap: 24 }}>
+        {/* Welcome Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
+          <div>
+            <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: 0.7 }}>{copy.dash}</div>
+            <h1 style={{ fontSize: 28, margin: "5px 0 4px", color: c.text, fontWeight: 900 }}>
+              {copy.welcome}, {user.name || "Citizen"}
+            </h1>
+            <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>
+              {copy.tools}
+            </p>
           </div>
-          <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: .7, textTransform: "uppercase" }}>{t.voiceAssistance}</div>
-          <h2 style={{ fontSize: 24, margin: "7px 0 6px", color: c.text, fontWeight: 850 }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).ready}</h2>
-          <p style={{ color: c.muted, fontSize: 13.5, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 22px" }}>
-            {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).desc}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setVoiceError("");
-              setHeardText("");
-              setQuestionsStarted(true);
-              setProfileStep(0);
+          {hasProfile && (
+            <button
+              type="button"
+              onClick={() => setActiveNav("Profile")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 16px",
+                borderRadius: 999,
+                background: c.surface2,
+                border: `1px solid ${c.border}`,
+                color: c.text,
+                fontSize: 12,
+                fontWeight: 750,
+                cursor: "pointer",
+              }}
+            >
+              <UserCircle size={16} style={{ color: c.primary }} />
+              <span>{({ en: "View Profile", hi: "प्रोफ़ाइल देखें", bn: "প্রোফাইল দেখুন", ta: "சுயவிவரம்", mr: "प्रोफाइल पहा", te: "ప్రొఫైల్ చూడండి" }[currentLanguage] || "View Profile")}</span>
+            </button>
+          )}
+        </div>
+
+        {/* User Profile Snapshot Card */}
+        {hasProfile && (
+          <div
+            className="glass"
+            style={{
+              borderRadius: 20,
+              padding: "20px 22px",
+              border: `1px solid ${c.border}`,
+              background: `linear-gradient(135deg, ${c.surface}, ${c.surface2})`,
             }}
-            className="pulse"
-            style={{ ...primaryButton(c), padding: "16px 32px", fontSize: 15, margin: "0 auto", borderRadius: 16 }}
           >
-            <Mic size={20} /> {t.tapToSpeak}
-          </button>
-          <div style={{ marginTop: 16, color: c.muted, fontSize: 11.5, display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
-            <span>🎙 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).natural}</span>
-            <span>•</span>
-            <span>🔊 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).read}</span>
-            <span>•</span>
-            <span>✍️ {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).auto}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: `${c.primary}18`, color: c.primary, display: "grid", placeItems: "center" }}>
+                  <BadgeCheck size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 850, color: c.text }}>
+                    {({ en: "Active Eligibility Profile", hi: "सक्रिय पात्रता प्रोफ़ाइल", bn: "সক্রিয় যোগ্যতার প্রোফাইল", ta: "செயலில் உள்ள சுயவிவரம்", mr: "सक्रिय पात्रता प्रोफाइल", te: "యాక్టివ్ ప్రొఫైల్" }[currentLanguage] || "Active Eligibility Profile")}
+                  </div>
+                  <div style={{ fontSize: 11, color: c.muted }}>
+                    {({ en: "Schemes are personalized to your verified inputs", hi: "योजनाएँ आपकी प्रविष्टियों के आधार पर सुझाई गई हैं", bn: "প্রকল্পগুলি আপনার তথ্যের ভিত্তিতে প্রস্তাবিত", ta: "திட்டங்கள் தனிப்பயனாக்கப்பட்டவை", mr: "योजना आपल्या माहितीनुसार जुळवल्या आहेत", te: "పథకాలు వ్యక్తిగతీకరించబడ్డాయి" }[currentLanguage] || "Schemes are personalized to your verified inputs")}
+                  </div>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  background: `${c.success}18`,
+                  color: c.success,
+                  border: `1px solid ${c.success}40`,
+                }}
+              >
+                ✓ Profile Active
+              </span>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+              <div style={{ padding: "10px 14px", borderRadius: 12, background: c.surface, border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 10, color: c.muted, fontWeight: 700, textTransform: "uppercase" }}>Category</div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: c.text, marginTop: 3 }}>{profile.category || "General"}</div>
+              </div>
+              <div style={{ padding: "10px 14px", borderRadius: 12, background: c.surface, border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 10, color: c.muted, fontWeight: 700, textTransform: "uppercase" }}>Annual Income</div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: c.primary, marginTop: 3 }}>
+                  {profile.income ? `₹${Number(profile.income).toLocaleString("en-IN")}` : "Under ₹3 Lakh"}
+                </div>
+              </div>
+              <div style={{ padding: "10px 14px", borderRadius: 12, background: c.surface, border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 10, color: c.muted, fontWeight: 700, textTransform: "uppercase" }}>State / UT</div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: c.text, marginTop: 3 }}>{profile.location || profile.state || "All-India"}</div>
+              </div>
+              <div style={{ padding: "10px 14px", borderRadius: 12, background: c.surface, border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 10, color: c.muted, fontWeight: 700, textTransform: "uppercase" }}>Need / Sector</div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: c.text, marginTop: 3 }}>{profile.occupation || profile.ideaCategory || profile.businessType || "Enterprise"}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Feature Grid */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 850, letterSpacing: 0.6, color: c.primary, textTransform: "uppercase", marginBottom: 10 }}>
+            {({ en: "Core Services", hi: "मुख्य सेवाएँ", bn: "মূল সেবাসমূহ", ta: "முக்கிய சேவைகள்", mr: "मुख्य सेवा", te: "ప్రధాన సేవలు" }[currentLanguage] || "Core Services")}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+            <button
+              type="button"
+              onClick={() => setActiveNav("Find Schemes")}
+              style={{
+                padding: "16px 18px",
+                borderRadius: 16,
+                background: c.surface,
+                border: `1.5px solid ${c.border}`,
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.primary}18`, color: c.primary, display: "grid", placeItems: "center" }}>
+                <Search size={18} />
+              </div>
+              <div style={{ fontWeight: 850, fontSize: 14, color: c.text }}>
+                {({ en: "Find Schemes", hi: "योजनाएँ खोजें", bn: "প্রকল্প খুঁজুন", ta: "திட்டங்களைக் கண்டறியவும்", mr: "योजना शोधा", te: "పథకాలను కనుగొనండి" }[currentLanguage] || "Find Schemes")}
+              </div>
+              <div style={{ fontSize: 11.5, color: c.muted, lineHeight: 1.4 }}>
+                {results.length > 0 ? `${results.length} eligible schemes available` : "Discover matching government schemes"}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveNav("Calculator")}
+              style={{
+                padding: "16px 18px",
+                borderRadius: 16,
+                background: c.surface,
+                border: `1.5px solid ${c.border}`,
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.accent || "#E58B35"}18`, color: c.accent || "#E58B35", display: "grid", placeItems: "center" }}>
+                <Calculator size={18} />
+              </div>
+              <div style={{ fontWeight: 850, fontSize: 14, color: c.text }}>
+                {({ en: "EMI & Loan Calculator", hi: "वित्तीय कैलकुलेटर", bn: "ইএমআই ক্যালকুলেটর", ta: "கணக்குப்பொறி", mr: "कॅल्क्युलेटर", te: "క్యాలిక్యులేటర్" }[currentLanguage] || "Financial Calculator")}
+              </div>
+              <div style={{ fontSize: 11.5, color: c.muted, lineHeight: 1.4 }}>
+                Compute loan EMIs, interest subsidies & what-if plans
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveNav("Nearby Help")}
+              style={{
+                padding: "16px 18px",
+                borderRadius: 16,
+                background: c.surface,
+                border: `1.5px solid ${c.border}`,
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.primary}18`, color: c.primary, display: "grid", placeItems: "center" }}>
+                <MapPin size={18} />
+              </div>
+              <div style={{ fontWeight: 850, fontSize: 14, color: c.text }}>
+                {({ en: "Nearby Help Centers", hi: "नज़दीकी सहायता केंद्र", bn: "কাছাকাছি সহায়তা", ta: "அருகிலுள்ள உதவி", mr: "जवळची मदत", te: "సమీప సహాయం" }[currentLanguage] || "Nearby Help")}
+              </div>
+              <div style={{ fontSize: 11.5, color: c.muted, lineHeight: 1.4 }}>
+                Find nearest PSB bank branches & DIC nodal desks
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveNav("Applications")}
+              style={{
+                padding: "16px 18px",
+                borderRadius: 16,
+                background: c.surface,
+                border: `1.5px solid ${c.border}`,
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${c.success || "#2D8A58"}18`, color: c.success || "#2D8A58", display: "grid", placeItems: "center" }}>
+                <FileCheck2 size={18} />
+              </div>
+              <div style={{ fontWeight: 850, fontSize: 14, color: c.text }}>
+                {({ en: "My Applications", hi: "मेरे आवेदन", bn: "আমার আবেদন", ta: "விண்ணப்பங்கள்", mr: "माझे अर्ज", te: "నా దరఖాస్తులు" }[currentLanguage] || "My Applications")}
+              </div>
+              <div style={{ fontSize: 11.5, color: c.muted, lineHeight: 1.4 }}>
+                Track submission status, review stages & audit trail
+              </div>
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Reuse the exact existing Find Schemes/Profile questionnaire after Tap to Speak. */}
-      {questionsStarted && (
-        <ProfileScreen
-          c={c}
-          t={t}
-          language={languageFromTranslation(t)}
-          profile={profile}
-          setProfile={setProfile}
-          step={profileStep}
-          setStep={setProfileStep}
-          autoStartVoice={true}
-          onVoiceStarted={() => {}}
-          onBack={() => {
-            setQuestionsStarted(false);
-            setListening(false);
-            setVoiceError("");
-            setHeardText("");
-            if (recognitionRef.current) recognitionRef.current.abort();
-            if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
-          }}
-          onFinish={onFinish}
-        />
-      )}
-    </>
-  );
+        {/* Recommended Schemes Section */}
+        {topRecommendations.length > 0 && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 850, letterSpacing: 0.6, color: c.primary, textTransform: "uppercase" }}>
+                  {({ en: "Personalized Matches", hi: "आपके लिए सुझाई गई योजनाएँ", bn: "প্রস্তাবিত প্রকল্প", ta: "பரிந்துரைக்கப்பட்டவை", mr: "शिफारस केलेल्या योजना", te: "సిఫార్సు చేయబడిన పథకాలు" }[currentLanguage] || "Personalized Matches")}
+                </div>
+                <h3 style={{ fontSize: 19, fontWeight: 900, color: c.text, margin: "3px 0 0" }}>
+                  {({ en: "Top Recommended Schemes", hi: "शीर्ष अनुशंसित योजनाएँ", bn: "শীর্ষ প্রস্তাবিত প্রকল্প", ta: "சிறந்த திட்டங்கள்", mr: "अव्वल योजना", te: "ఉత్తమ పథకాలు" }[currentLanguage] || "Top Recommended Schemes")}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveNav("Find Schemes")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  background: `${c.primary}15`,
+                  border: `1px solid ${c.primary}40`,
+                  color: c.primary,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>View all {results.length} schemes</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+              {topRecommendations.map((sch, idx) => (
+                <div
+                  key={sch.id || idx}
+                  className="glass"
+                  style={{
+                    borderRadius: 18,
+                    padding: 18,
+                    border: `1px solid ${c.border}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: c.primary, background: `${c.primary}15`, padding: "3px 9px", borderRadius: 999 }}>
+                        {sch.score ? `${sch.score}% Match` : "Eligible"}
+                      </span>
+                      <span style={{ fontSize: 10, color: c.muted, fontWeight: 650, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
+                        {sch.ministry || "Govt of India"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 850, color: c.text, lineHeight: 1.3, marginBottom: 6 }}>
+                      {sch.name || sch.scheme_name}
+                    </div>
+                    <div style={{ fontSize: 12, color: c.muted, lineHeight: 1.4, marginBottom: 12 }}>
+                      {sch.benefit || sch.maxAssistance || "Financial assistance and subsidy support."}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenScheme(sch)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        background: c.primary,
+                        color: "white",
+                        border: "none",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                      }}
+                    >
+                      View Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveNav("Calculator")}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        background: c.surface2,
+                        color: c.text,
+                        border: `1px solid ${c.border}`,
+                        fontSize: 12,
+                        fontWeight: 750,
+                        cursor: "pointer",
+                      }}
+                      title="Calculate EMI for this scheme"
+                    >
+                      <Calculator size={15} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Voice Assistance Orb Section */}
+        {!questionsStarted && (
+          <div className="glass" style={{ borderRadius: 22, padding: "28px 24px", textAlign: "center", border: `1px solid ${c.border}` }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <AiOrb size="sm" state={listening ? "LISTENING" : "IDLE"} interactive={true} onClick={() => {
+                setVoiceError("");
+                setHeardText("");
+                setQuestionsStarted(true);
+                setProfileStep(0);
+              }} />
+            </div>
+            <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: 0.7, textTransform: "uppercase" }}>
+              {t.voiceAssistance || "AI Voice Assistant"}
+            </div>
+            <h3 style={{ fontSize: 20, margin: "6px 0", color: c.text, fontWeight: 850 }}>
+              {copy.ready}
+            </h3>
+            <p style={{ color: c.muted, fontSize: 13, maxWidth: 520, margin: "0 auto 16px", lineHeight: 1.5 }}>
+              {copy.desc}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setVoiceError("");
+                setHeardText("");
+                setQuestionsStarted(true);
+                setProfileStep(0);
+              }}
+              style={{ ...primaryButton(c), padding: "12px 24px", fontSize: 14, margin: "0 auto", borderRadius: 14 }}
+            >
+              <Mic size={17} /> {t.tapToSpeak || "Tap to Speak"}
+            </button>
+          </div>
+        )}
+
+        {/* Questionnaire in-progress */}
+        {questionsStarted && (
+          <ProfileScreen
+            c={c}
+            t={t}
+            language={languageFromTranslation(t)}
+            profile={profile}
+            setProfile={setProfile}
+            step={profileStep}
+            setStep={setProfileStep}
+            autoStartVoice={true}
+            onVoiceStarted={() => {}}
+            onBack={() => {
+              setQuestionsStarted(false);
+              setListening(false);
+              setVoiceError("");
+              setHeardText("");
+              if (recognitionRef.current) recognitionRef.current.abort();
+              if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+            }}
+            onFinish={() => {
+              setQuestionsStarted(false);
+              onFinish();
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <main style={{ minHeight: "calc(100vh - 74px)", background: c.bg }} className="fade">
@@ -3753,14 +4111,31 @@ function DashboardScreen({
           <div style={{ marginTop: 15, padding: 11, borderRadius: 13, background: c.surface2, display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 30, height: 30, borderRadius: 50, background: `${c.primary}18`, color: c.primary, display: "grid", placeItems: "center" }}><User size={15} /></div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "Guest User"}</div>
+              <div style={{ fontSize: 11, fontWeight: 850, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || "Citizen"}</div>
               <div style={{ color: c.muted, fontSize: 9 }}>{({en:"Profile active",hi:"प्रोफ़ाइल सक्रिय",bn:"প্রোফাইল সক্রিয়",ta:"சுயவிவரம் செயலில்",mr:"प्रोफाइल सक्रिय",te:"ప్రొఫైల్ సక్రియంగా ఉంది"}[currentLanguage] || "Profile active")}</div>
             </div>
           </div>
         </aside>
 
         <section style={{ minWidth: 0 }}>
-          {activeNav === "Nearby Help"
+          {activeNav === "Find Schemes"
+            ? (
+              <ErrorBoundary>
+                <ResultsScreen
+                  c={c}
+                  t={t}
+                  language={languageFromTranslation(t)}
+                  results={results}
+                  profile={profile}
+                  savedSchemes={savedSchemes}
+                  setSavedSchemes={setSavedSchemes}
+                  detailed={true}
+                  onBack={() => setActiveNav("Dashboard")}
+                  onOpen={onOpenScheme}
+                />
+              </ErrorBoundary>
+            )
+            : activeNav === "Nearby Help"
             ? (
               <ErrorBoundary>
                 <NearbyHelpScreen
@@ -3831,7 +4206,7 @@ function DashboardScreen({
                         onTrackApplication(app);
                       }
                     }}
-                    onNewApplication={() => onFindSchemes()}
+                    onNewApplication={() => setActiveNav("Find Schemes")}
                   />
                 )
                 : activeNav === "Saved Schemes"
@@ -3840,7 +4215,9 @@ function DashboardScreen({
                     c={c}
                     language={languageFromTranslation(t)}
                     savedSchemes={savedSchemes}
+                    results={results}
                     onOpen={onOpenScheme}
+                    setSavedSchemes={setSavedSchemes}
                   />
                 )
                 : activeNav === "Documents"
@@ -5043,23 +5420,29 @@ function ApplicationsPanel({ c, language = "en", onTrackApplication, onNewApplic
 }
 
 
-function SavedSchemesPanel({ c, language, savedSchemes = [], onOpen }) {
+function SavedSchemesPanel({ c, language, savedSchemes = [], results = [], onOpen, setSavedSchemes }) {
+  const hasSaved = Array.isArray(savedSchemes) && savedSchemes.length > 0;
+  const recommendations = Array.isArray(results) ? results : [];
+
   return (
     <div className="fade">
       <div style={{ marginBottom: 20 }}>
-        <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: .7 }}>SAVED SCHEMES</div>
-        <h1 style={{ fontSize: 30, margin: "6px 0 4px", color: c.text }}>Your saved schemes</h1>
-        <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>Schemes you save from Find Schemes will appear here.</p>
+        <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: 0.7 }}>SAVED & RECOMMENDED SCHEMES</div>
+        <h1 style={{ fontSize: 30, margin: "6px 0 4px", color: c.text, fontWeight: 900 }}>
+          {hasSaved ? "Your Saved Schemes" : "Recommended Schemes For You"}
+        </h1>
+        <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>
+          {hasSaved
+            ? "Track and manage schemes you have bookmarked for application."
+            : "Personalized government schemes matched to your profile. Bookmark any scheme to save it."}
+        </p>
       </div>
-      {savedSchemes.length === 0 ? (
-        <div className="glass" style={{ borderRadius: 20, padding: 30, textAlign: "center", color: c.muted }}>
-          No schemes saved yet. Open Find Schemes and use the Save button on any scheme card.
-        </div>
-      ) : (
+
+      {hasSaved ? (
         <div className="scheme-grid">
           {savedSchemes.map((scheme, index) => (
             <SchemeCard
-              key={scheme.id}
+              key={scheme.id || index}
               c={c}
               t={{}}
               language={language}
@@ -5067,10 +5450,43 @@ function SavedSchemesPanel({ c, language, savedSchemes = [], onOpen }) {
               index={index}
               detailed={true}
               isSaved={true}
-              onToggleSave={() => {}}
+              onToggleSave={() => {
+                if (setSavedSchemes) {
+                  setSavedSchemes((curr) => (curr || []).filter((item) => item.id !== scheme.id));
+                }
+              }}
               onOpen={() => onOpen(scheme)}
             />
           ))}
+        </div>
+      ) : recommendations.length > 0 ? (
+        <div className="scheme-grid">
+          {recommendations.map((scheme, index) => (
+            <SchemeCard
+              key={scheme.id || index}
+              c={c}
+              t={{}}
+              language={language}
+              scheme={scheme}
+              index={index}
+              detailed={true}
+              isSaved={(savedSchemes || []).some((item) => item.id === scheme.id)}
+              onToggleSave={() => {
+                if (setSavedSchemes) {
+                  setSavedSchemes((curr) => {
+                    const exists = (curr || []).some((item) => item.id === scheme.id);
+                    if (exists) return curr.filter((item) => item.id !== scheme.id);
+                    return [...(curr || []), scheme];
+                  });
+                }
+              }}
+              onOpen={() => onOpen(scheme)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="glass" style={{ borderRadius: 20, padding: 30, textAlign: "center", color: c.muted }}>
+          No schemes saved or recommended yet. Complete your profile or search schemes to see personalized options.
         </div>
       )}
     </div>

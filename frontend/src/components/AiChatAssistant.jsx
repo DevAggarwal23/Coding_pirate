@@ -250,8 +250,8 @@ export function AiChatAssistant({
         text: response.reply || "I am here to assist your scheme journey.",
         suggested_actions: response.suggested_actions || [],
         matched_schemes: response.matched_schemes || [],
-        provider: response.provider || "groq_ai",
-        source: response.source_attribution || (response.provider === "groq_ai" ? "Groq Cloud Llama 3.3" : "Scheme Saathi Context Engine"),
+        provider: "scheme_saathi_ai",
+        source: response.source_attribution || "Scheme Saathi AI Engine",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
