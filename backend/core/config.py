@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     mappls_client_id: str = ""
     mappls_client_secret: str = ""
 
+    # Google OAuth 2.0 Credentials
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    session_expire_hours: int = 72
+
+    # CORS Allowed Origins (Comma-separated for multi-domain support)
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+
     # App
     environment: str = "development"
     port: int = 8000

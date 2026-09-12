@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.database import init_db
-from routers import voice, profile, matching, ocr, status, finance, partners, documents, schemes, chat
+from routers import voice, profile, matching, ocr, status, finance, partners, documents, schemes, chat, admin, auth
 from routers import bhashini as bhashini_router
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -99,17 +99,27 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ── CORS (allow React frontend + Vite dev server + IVR + Postman) ─────────────
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# ── CORS (allow React frontend + Vite dev server + production domain) ────────
+def _get_cors_origins():
+    from core.config import settings
+    base_origins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-    ],
+    ]
+    if hasattr(settings, "cors_origins") and settings.cors_origins:
+        for origin in settings.cors_origins.split(","):
+            clean = origin.strip()
+            if clean and clean not in base_origins:
+                base_origins.append(clean)
+    return base_origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_get_cors_origins(),
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
@@ -146,6 +156,8 @@ app.include_router(documents.router)
 app.include_router(schemes.router)
 app.include_router(bhashini_router.router)
 app.include_router(chat.router)
+app.include_router(admin.router)
+app.include_router(auth.router)
 
 # ── Health + Stats ────────────────────────────────────────────────────────────
 @app.get("/api/health", tags=["System"])

@@ -23,63 +23,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { sendChatMessage } from "../services/api/chatApi.js";
+import { AiOrb } from "./AiOrb.jsx";
 
-/**
- * 3D-styled Animated AI Orb Component
- */
-function AiOrb({ state = "idle", size = 44, colorPrimary = "#087F5B", colorAccent = "#E58B35" }) {
-  const isListening = state === "listening";
-  const isThinking = state === "thinking";
-  const isError = state === "error";
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        position: "relative",
-        display: "grid",
-        placeItems: "center",
-        flexShrink: 0,
-        background: isError
-          ? "radial-gradient(circle at 35% 35%, #f87171, #dc2626)"
-          : isListening
-          ? `radial-gradient(circle at 35% 35%, ${colorAccent}, #d97706)`
-          : isThinking
-          ? `radial-gradient(circle at 35% 35%, #60a5fa, ${colorPrimary})`
-          : `radial-gradient(circle at 35% 35%, ${colorPrimary}, #044e39)`,
-        boxShadow: isListening
-          ? `0 0 20px ${colorAccent}80`
-          : isThinking
-          ? `0 0 22px ${colorPrimary}90`
-          : `0 4px 14px ${colorPrimary}40`,
-        transition: "all 0.35s ease",
-      }}
-    >
-      {/* Outer Pulse Ring */}
-      <div
-        style={{
-          position: "absolute",
-          inset: -4,
-          borderRadius: "50%",
-          border: `2px solid ${isListening ? colorAccent : colorPrimary}`,
-          opacity: isThinking || isListening ? 0.7 : 0.25,
-          animation: isThinking ? "spin 3s linear infinite" : isListening ? "ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite" : "none",
-        }}
-      />
-
-      {/* Center Icon */}
-      {isListening ? (
-        <Mic size={size * 0.48} color="#FFFFFF" className="animate-pulse" />
-      ) : isThinking ? (
-        <RefreshCw size={size * 0.48} color="#FFFFFF" className="animate-spin" />
-      ) : (
-        <Sparkles size={size * 0.48} color="#FFFFFF" />
-      )}
-    </div>
-  );
-}
 
 /**
  * Advanced Context-Aware AI Chatbot Assistant Component
@@ -408,13 +353,12 @@ export function AiChatAssistant({
             backdropFilter: "blur(12px)",
           }}
         >
-          <AiOrb state={orbState} size={40} colorPrimary={c.primary} colorAccent={c.accent} />
+          <AiOrb state={orbState ? orbState.toUpperCase() : "IDLE"} size="sm" />
           <div style={{ textAlign: "left" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: c.primary, display: "flex", alignItems: "center", gap: 5 }}>
               <span>Scheme Saathi AI</span>
-              <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 8, background: `${c.primary}18`, color: c.primary }}>Groq</span>
             </div>
-            <div style={{ fontSize: 11, color: c.muted, fontWeight: 650 }}>Ask about schemes & loan</div>
+            <div style={{ fontSize: 11, color: c.muted, fontWeight: 650 }}>Ask about schemes & loans</div>
           </div>
         </button>
       )}
@@ -452,17 +396,14 @@ export function AiChatAssistant({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <AiOrb state={orbState} size={36} colorPrimary={c.primary} colorAccent={c.accent} />
+              <AiOrb state={orbState ? orbState.toUpperCase() : "IDLE"} size="sm" />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 900, color: c.text, display: "flex", alignItems: "center", gap: 6 }}>
                   <span>Scheme Saathi AI</span>
-                  <span style={{ fontSize: 10, fontWeight: 800, padding: "1px 6px", borderRadius: 6, background: `${c.primary}20`, color: c.primary }}>
-                    Llama 3.3
-                  </span>
                 </div>
                 <div style={{ fontSize: 11, color: c.muted, display: "flex", alignItems: "center", gap: 4 }}>
                   <ShieldCheck size={12} color={c.primary} />
-                  <span>Context-Aware Journey Assistant</span>
+                  <span>Ask about schemes & loans</span>
                 </div>
               </div>
             </div>

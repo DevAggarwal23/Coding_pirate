@@ -95,6 +95,7 @@ async def create_application(
     # In-memory record
     app_record = {
         "application_id": app_id,
+        "user_id": request.user_id,
         "scheme_id": request.scheme_id,
         "scheme_name": request.scheme_name or request.scheme_id,
         "partner_id": request.partner_id,
@@ -177,6 +178,7 @@ async def create_application(
 
     return ApplicationDetailResponse(
         application_id=app_id,
+        user_id=request.user_id,
         scheme_id=request.scheme_id,
         scheme_name=request.scheme_name,
         partner_id=request.partner_id,
@@ -630,6 +632,7 @@ async def get_application_detail(
 
     return ApplicationDetailResponse(
         application_id=application_id,
+        user_id=str(app_data.get("user_id")) if app_data.get("user_id") else None,
         scheme_id=app_data.get("scheme_id", ""),
         scheme_name=app_data.get("scheme_name"),
         partner_id=app_data.get("partner_id"),
@@ -675,6 +678,7 @@ async def get_application_status_response(
 
 
 async def list_user_applications(
+    user_id: Optional[str] = None,
     db: Optional[AsyncSession] = None,
 ) -> ApplicationListResponse:
     """
@@ -686,7 +690,14 @@ async def list_user_applications(
     # DB records
     if db is not None:
         async def _query_all_apps():
-            res = await db.execute(select(Application).order_by(Application.created_at.desc()))
+            stmt = select(Application)
+            if user_id:
+                try:
+                    stmt = stmt.where(Application.user_id == uuid.UUID(user_id))
+                except Exception:
+                    pass
+            stmt = stmt.order_by(Application.created_at.desc())
+            res = await db.execute(stmt)
             return res.scalars().all()
 
         try:
@@ -699,8 +710,10 @@ async def list_user_applications(
             logger.debug(f"Error querying applications from DB: {e}")
 
     # In-memory records not in DB
-    for app_id in _IN_MEMORY_APPLICATIONS.keys():
+    for app_id, app_info in _IN_MEMORY_APPLICATIONS.items():
         if app_id not in seen_ids:
+            if user_id and app_info.get("user_id") and str(app_info.get("user_id")) != str(user_id):
+                continue
             try:
                 detail = await get_application_detail(app_id, db=db)
                 results.append(detail)

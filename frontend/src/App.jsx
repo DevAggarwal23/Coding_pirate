@@ -46,6 +46,9 @@ import {
   Download,
   FileUp,
   ShieldAlert,
+  Sprout,
+  GraduationCap,
+  HeartPulse,
 } from "lucide-react";
 import { transcribeVoice } from "./services/api/voiceApi.js";
 import { extractProfile } from "./services/api/profileApi.js";
@@ -70,6 +73,18 @@ import { verifyDocument } from "./services/api/ocrApi.js";
 import { PartnerMap } from "./components/PartnerMap.jsx";
 import { FinancialCalculator } from "./components/FinancialCalculator.jsx";
 import { AiChatAssistant } from "./components/AiChatAssistant.jsx";
+import AdminDashboard from "./components/AdminDashboard.jsx";
+import { AiOrb } from "./components/AiOrb.jsx";
+import {
+  Card,
+  StatCard,
+  StatusBadge,
+  ProgressBar,
+  JourneyStepper,
+  LoadingSkeleton,
+  EmptyStateView,
+} from "./components/DesignSystem.jsx";
+import { GoogleAuthButton } from "./components/GoogleAuthButton.jsx";
 
 const THEMES = {
   light: {
@@ -2866,49 +2881,137 @@ function App() {
         }
       `}</style>
 
-      <Header
-        c={c}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        mobileMenu={mobileMenu}
-        setMobileMenu={setMobileMenu}
-        language={language}
-        t={t}
-        onLanguage={() => {
-          setScreen("language");
-          setMobileMenu(false);
-        }}
-        onAuth={() => {
-          setScreen("auth");
-          setMobileMenu(false);
-        }}
-        onHelp={() => {
-          setHelpOpen(true);
-          setMobileMenu(false);
-        }}
-      />
-
-      {helpOpen && (
-        <HelpModal
-          c={c}
-          t={t}
-          onClose={() => setHelpOpen(false)}
+      {screen === "admin" ? (
+        <AdminDashboard
+          onBackToPortal={() => setScreen("dashboard")}
         />
-      )}
+      ) : (
+        <>
+          <Header
+            c={c}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            mobileMenu={mobileMenu}
+            setMobileMenu={setMobileMenu}
+            language={language}
+            setLanguage={selectLanguage}
+            t={t}
+            screen={screen}
+            onHome={() => {
+              setScreen("landing");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            onSchemes={() => {
+              handleRunMatching(profile);
+            }}
+            onLearn={() => {
+              if (screen !== "landing") {
+                setScreen("landing");
+                setTimeout(() => {
+                  document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              } else {
+                document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            onAbout={() => {
+              if (screen !== "landing") {
+                setScreen("landing");
+                setTimeout(() => {
+                  document.getElementById("about-section")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              } else {
+                document.getElementById("about-section")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            onLanguage={() => {
+              setScreen("language");
+              setMobileMenu(false);
+            }}
+            onAuth={() => {
+              setScreen("auth");
+              setMobileMenu(false);
+            }}
+            onHelp={() => {
+              setHelpOpen(true);
+              setMobileMenu(false);
+            }}
+            onAdmin={() => {
+              setScreen("admin");
+              setMobileMenu(false);
+            }}
+          />
 
-      {screen === "landing" && (
-        <LandingScreen
-          c={c}
-          t={t}
-          language={language}
-          onStart={() => setScreen("language")}
-          onLearn={() =>
-            document
-              .getElementById("how-it-works")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
-        />
-      )}
+          {helpOpen && (
+            <HelpModal
+              c={c}
+              t={t}
+              onClose={() => setHelpOpen(false)}
+            />
+          )}
+
+          {screen === "landing" && (
+            <LandingScreen
+              c={c}
+              t={t}
+              language={language}
+              onStart={() => setScreen("language")}
+              onSchemes={() => handleRunMatching(profile)}
+              onVoiceSearch={() => setVoiceModalOpen(true)}
+              onSearchQuery={async (queryText) => {
+                if (!queryText || !queryText.trim()) return;
+                try {
+                  const extractedRes = await extractProfile(queryText);
+                  if (extractedRes?.extracted) {
+                    const ext = extractedRes.extracted;
+                    const newProf = {
+                      ...profile,
+                      category: ext.category || profile.category || "General",
+                      income: ext.income ? String(ext.income) : profile.income || "300000",
+                      businessType: ext.business_type || profile.businessType || "agriculture",
+                      location: ext.state || profile.location || "Uttar Pradesh",
+                      project_cost: ext.project_cost ? String(ext.project_cost) : profile.project_cost || "500000",
+                    };
+                    setProfile(newProf);
+                    handleRunMatching(newProf);
+                    return;
+                  }
+                } catch (e) {
+                  console.warn("Direct NLP extraction failed, proceeding with basic match:", e);
+                }
+                handleRunMatching(profile);
+              }}
+              onCategoryClick={(categoryKey) => {
+                const updatedProf = {
+                  ...profile,
+                  businessType:
+                    categoryKey === "krishi"
+                      ? "agriculture"
+                      : categoryKey === "rozgar"
+                      ? "small_business"
+                      : categoryKey === "shiksha"
+                      ? "education"
+                      : "healthcare",
+                  ideaCategory:
+                    categoryKey === "krishi"
+                      ? "Agriculture"
+                      : categoryKey === "rozgar"
+                      ? "MSME & Business"
+                      : categoryKey === "shiksha"
+                      ? "Education & Skills"
+                      : "Health & Welfare",
+                };
+                setProfile(updatedProf);
+                handleRunMatching(updatedProf);
+              }}
+              onLearn={() =>
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              onAuth={() => setScreen("auth")}
+            />
+          )}
 
       {screen === "language" && (
         <LanguageScreen
@@ -2954,6 +3057,7 @@ function App() {
             handleRunMatching(profile);
           }}
           onFinish={() => handleRunMatching(profile)}
+          onAdmin={() => setScreen("admin")}
           onBack={() => setScreen("landing")}
           onOpenScheme={(scheme) => { setSelectedScheme(scheme); setScreen("detail"); }}
           onTrackApplication={(appRecord) => {
@@ -3173,6 +3277,8 @@ function App() {
           handleRunMatching(finalProf);
         }}
       />
+        </>
+      )}
     </div>
   );
 }
@@ -3193,6 +3299,7 @@ function DashboardScreen({
   onFinish,
   onOpenScheme,
   onTrackApplication,
+  onAdmin,
 }) {
   const [loan, setLoan] = useState(500000);
   const [rate, setRate] = useState(8.5);
@@ -3249,12 +3356,12 @@ function DashboardScreen({
 
   const currentLanguage = languageFromTranslation(t);
   const navLabels = {
-    en: { Dashboard: "Dashboard", "Find Schemes": "Find Schemes", Compare: "Compare", Calculator: "Calculator", "Nearby Help": "Nearby Help", Applications: "Applications", "Saved Schemes": "Saved Schemes", Documents: "Documents", Profile: "Profile", Help: "Help" },
-    hi: { Dashboard: "डैशबोर्ड", "Find Schemes": "योजनाएँ खोजें", Compare: "तुलना करें", Calculator: "कैलकुलेटर", "Nearby Help": "नज़दीकी सहायता", Applications: "आवेदन", "Saved Schemes": "सहेजी गई योजनाएँ", Documents: "दस्तावेज़", Profile: "प्रोफ़ाइल", Help: "मदद" },
-    bn: { Dashboard: "ড্যাশবোর্ড", "Find Schemes": "প্রকল্প খুঁজুন", Compare: "তুলনা করুন", Calculator: "ক্যালকুলেটর", "Nearby Help": "কাছাকাছি সহায়তা", Applications: "আবেদন", "Saved Schemes": "সংরক্ষিত প্রকল্প", Documents: "নথি", Profile: "প্রোফাইল", Help: "সাহায্য" },
-    ta: { Dashboard: "டாஷ்போர்டு", "Find Schemes": "திட்டங்களைக் கண்டறியவும்", Compare: "ஒப்பிடுக", Calculator: "கணக்குப்பொறி", "Nearby Help": "அருகிலுள்ள உதவி", Applications: "விண்ணப்பங்கள்", "Saved Schemes": "சேமித்த திட்டங்கள்", Documents: "ஆவணங்கள்", Profile: "சுயவிவரம்", Help: "உதவி" },
-    mr: { Dashboard: "डॅशबोर्ड", "Find Schemes": "योजना शोधा", Compare: "तुलना करा", Calculator: "कॅल्क्युलेटर", "Nearby Help": "जवळची मदत", Applications: "अर्ज", "Saved Schemes": "जतन केलेल्या योजना", Documents: "कागदपत्रे", Profile: "प्रोफाइल", Help: "मदत" },
-    te: { Dashboard: "డ్యాష్‌బోర్డ్", "Find Schemes": "పథకాలను కనుగొనండి", Compare: "పోల్చండి", Calculator: "క్యాలిక్యులేటర్", "Nearby Help": "సమీప సహాయం", Applications: "దరఖాస్తులు", "Saved Schemes": "సేవ్ చేసిన పథకాలు", Documents: "పత్రాలు", Profile: "ప్రొఫైల్", Help: "సహాయం" },
+    en: { Dashboard: "Dashboard", "Find Schemes": "Find Schemes", Compare: "Compare", Calculator: "Calculator", "Nearby Help": "Nearby Help", Applications: "Applications", "Saved Schemes": "Saved Schemes", Documents: "Documents", Profile: "Profile", Help: "Help", "Nodal Admin": "Nodal Admin" },
+    hi: { Dashboard: "डैशबोर्ड", "Find Schemes": "योजनाएँ खोजें", Compare: "तुलना करें", Calculator: "कैलकुलेटर", "Nearby Help": "नज़दीकी सहायता", Applications: "आवेदन", "Saved Schemes": "सहेजी गई योजनाएँ", Documents: "दस्तावेज़", Profile: "प्रोफ़ाइल", Help: "मदद", "Nodal Admin": "नोडल एडमिन" },
+    bn: { Dashboard: "ড্যাশবোর্ড", "Find Schemes": "প্রকল্প খুঁজুন", Compare: "তুলনা করুন", Calculator: "ক্যালকুলেটর", "Nearby Help": "কাছাকাছি সহায়তা", Applications: "আবেদন", "Saved Schemes": "সংরক্ষিত প্রকল্প", Documents: "নথি", Profile: "প্রোফাইল", Help: "সাহায্য", "Nodal Admin": "নোডাল অ্যাডমিন" },
+    ta: { Dashboard: "டாஷ்போர்டு", "Find Schemes": "திட்டங்களைக் கண்டறியவும்", Compare: "ஒப்பிடுக", Calculator: "கணக்குப்பொறி", "Nearby Help": "அருகிலுள்ள உதவி", Applications: "விண்ணப்பங்கள்", "Saved Schemes": "சேமித்த திட்டங்கள்", Documents: "ஆவணங்கள்", Profile: "சுயவிவரம்", Help: "உதவி", "Nodal Admin": "நோடல் நிர்வாகி" },
+    mr: { Dashboard: "डॅशबोर्ड", "Find Schemes": "योजना शोधा", Compare: "तुलना करा", Calculator: "कॅल्क्युलेटर", "Nearby Help": "जवळची मदत", Applications: "अर्ज", "Saved Schemes": "जतन केलेल्या योजना", Documents: "कागदपत्रे", Profile: "प्रोफाइल", Help: "मदत", "Nodal Admin": "नोडल ॲडमिन" },
+    te: { Dashboard: "డ్యాష్‌బోర్డ్", "Find Schemes": "పథకాలను కనుగొనండి", Compare: "పోల్చండి", Calculator: "క్యాలిక్యులేటర్", "Nearby Help": "సమీప సహాయం", Applications: "దరఖాస్తులు", "Saved Schemes": "సేవ్ చేసిన పథకాలు", Documents: "పత్రాలు", Profile: "ప్రొఫైల్", Help: "సహాయం", "Nodal Admin": "నోడల్ అడ్మిన్" },
   }[currentLanguage] || {};
 
   const menu = [
@@ -3267,10 +3374,15 @@ function DashboardScreen({
     { label: "Saved Schemes", icon: <BadgeCheck size={17} /> },
     { label: "Documents", icon: <FileText size={17} /> },
     { label: "Profile", icon: <UserCircle size={17} /> },
+    { label: "Nodal Admin", icon: <ShieldCheck size={17} /> },
     { label: "Help", icon: <CircleHelpIcon size={17} /> },
   ];
 
   const handleNav = (label) => {
+    if (label === "Nodal Admin") {
+      if (onAdmin) onAdmin();
+      return;
+    }
     setActiveNav(label);
     if (label === "Find Schemes") onFindSchemes();
   };
@@ -3388,7 +3500,13 @@ function DashboardScreen({
       recognition.onend = () => setListening(false);
       recognition.onerror = (event) => {
         setListening(false);
-        if (event.error !== "aborted") setVoiceError(`Microphone error: ${event.error}. Please try again.`);
+        if (event.error === "no-speech") {
+          setVoiceError("आवाज़ सुनाई नहीं दी। कृपया दोबारा बोलें या नीचे विकल्प चुनें। (No speech detected. Please speak into your microphone or choose an option.)");
+        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setVoiceError("माइक्रोफ़ोन अनुमति आवश्यक है। कृपया ब्राउज़र में माइक की अनुमति दें। (Microphone permission needed. Please allow microphone access in your browser.)");
+        } else if (event.error !== "aborted") {
+          setVoiceError(`Voice input note: ${event.error}. Please try speaking again or select an option below.`);
+        }
       };
       recognition.onresult = (event) => {
         const transcript = Array.from(event.results)
@@ -3478,12 +3596,20 @@ function DashboardScreen({
         <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).tools}</p>
       </div>
 
-      {/* Voice entry point. The existing Find Schemes questionnaire appears only after this is clicked. */}
+      {/* Voice entry point with Interactive 3D AI Orb */}
       {!questionsStarted && (
-        <div className="glass" style={{ borderRadius: 24, padding: 34, maxWidth: 820, margin: "0 auto 18px", textAlign: "center" }}>
-          <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: .7 }}>{t.voiceAssistance}</div>
-          <h2 style={{ fontSize: 24, margin: "7px 0 6px", color: c.text }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).ready}</h2>
-          <p style={{ color: c.muted, fontSize: 13, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 22px" }}>
+        <div className="glass" style={{ borderRadius: 24, padding: "34px 28px", maxWidth: 820, margin: "0 auto 24px", textAlign: "center", border: `1px solid ${c.border}` }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <AiOrb size="md" state={listening ? "LISTENING" : "IDLE"} interactive={true} onClick={() => {
+              setVoiceError("");
+              setHeardText("");
+              setQuestionsStarted(true);
+              setProfileStep(0);
+            }} />
+          </div>
+          <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: .7, textTransform: "uppercase" }}>{t.voiceAssistance}</div>
+          <h2 style={{ fontSize: 24, margin: "7px 0 6px", color: c.text, fontWeight: 850 }}>{(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).ready}</h2>
+          <p style={{ color: c.muted, fontSize: 13.5, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 22px" }}>
             {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).desc}
           </p>
           <button
@@ -3495,12 +3621,16 @@ function DashboardScreen({
               setProfileStep(0);
             }}
             className="pulse"
-            style={{ ...primaryButton(c), padding: "16px 30px", fontSize: 15, margin: "0 auto" }}
+            style={{ ...primaryButton(c), padding: "16px 32px", fontSize: 15, margin: "0 auto", borderRadius: 16 }}
           >
             <Mic size={20} /> {t.tapToSpeak}
           </button>
-          <div style={{ marginTop: 14, color: c.muted, fontSize: 11 }}>
-            🎙 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).natural} &nbsp; • &nbsp; 🔊 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).read} &nbsp; • &nbsp; ✍️ {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).auto}
+          <div style={{ marginTop: 16, color: c.muted, fontSize: 11.5, display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+            <span>🎙 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).natural}</span>
+            <span>•</span>
+            <span>🔊 {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).read}</span>
+            <span>•</span>
+            <span>✍️ {(DASHBOARD_COPY[currentLanguage] || DASHBOARD_COPY.en).auto}</span>
           </div>
         </div>
       )}
@@ -5131,8 +5261,17 @@ function Header({
   onLanguage,
   onAuth,
   onHelp,
+  onSchemes,
+  onHome,
+  onLearn,
+  onAbout,
+  screen,
+  language,
+  setLanguage,
   t,
 }) {
+  const isLanding = screen === "landing";
+
   return (
     <header
       style={{
@@ -5141,6 +5280,7 @@ function Header({
         position: "sticky",
         top: 0,
         zIndex: 50,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
       }}
     >
       <div
@@ -5152,11 +5292,14 @@ function Header({
           justifyContent: "space-between",
         }}
       >
+        {/* Brand Logo & Name */}
         <div
+          onClick={onHome || onLanguage}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 13,
+            gap: 12,
+            cursor: "pointer",
           }}
         >
           <div
@@ -5168,117 +5311,272 @@ function Header({
               display: "grid",
               placeItems: "center",
               color: "white",
+              boxShadow: `0 4px 12px ${c.primary}33`,
             }}
           >
-            <Landmark size={22} />
+            <Sprout size={24} />
           </div>
 
           <div>
             <div
               style={{
-                fontSize: 18,
-                fontWeight: 800,
+                fontSize: 20,
+                fontWeight: 850,
+                letterSpacing: -0.5,
+                color: c.text,
+                lineHeight: 1.1,
               }}
             >
-              SchemeSaathi
+              Scheme Saathi
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: c.primary,
+                letterSpacing: 0.2,
+              }}
+            >
+              हर योजना, आपके साथ
             </div>
           </div>
         </div>
 
-        <nav
-          className="desktop-nav"
+        {/* Center Nav Links on Landing Screen */}
+        {isLanding && (
+          <nav
+            className="desktop-nav"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 28,
+            }}
+          >
+            <button
+              onClick={onHome}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 14,
+                fontWeight: 750,
+                color: c.primary,
+                cursor: "pointer",
+                padding: "8px 4px",
+                position: "relative",
+              }}
+            >
+              Home
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: "15%",
+                  width: "70%",
+                  height: 2.5,
+                  borderRadius: 2,
+                  background: c.primary,
+                }}
+              />
+            </button>
+
+            <button
+              onClick={onSchemes}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 14,
+                fontWeight: 600,
+                color: c.text,
+                cursor: "pointer",
+                padding: "8px 4px",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = c.text)}
+            >
+              Schemes
+            </button>
+
+            <button
+              onClick={onLearn}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 14,
+                fontWeight: 600,
+                color: c.text,
+                cursor: "pointer",
+                padding: "8px 4px",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = c.text)}
+            >
+              How It Works
+            </button>
+
+            <button
+              onClick={onAbout || onLearn}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 14,
+                fontWeight: 600,
+                color: c.text,
+                cursor: "pointer",
+                padding: "8px 4px",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = c.text)}
+            >
+              About
+            </button>
+
+            <button
+              onClick={onHelp}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 14,
+                fontWeight: 600,
+                color: c.text,
+                cursor: "pointer",
+                padding: "8px 4px",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = c.text)}
+            >
+              Help
+            </button>
+          </nav>
+        )}
+
+        {/* Non-Landing Screen Navigation */}
+        {!isLanding && (
+          <nav
+            className="desktop-nav"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 24,
+            }}
+          >
+            <button onClick={onHome} style={navButton(c)}>
+              Home
+            </button>
+            <button onClick={onLanguage} style={navButton(c)}>
+              <Languages size={16} />
+              {t.language}
+            </button>
+            <button onClick={onHelp} style={navButton(c)}>
+              {t.help}
+            </button>
+          </nav>
+        )}
+
+        {/* Right CTA / Language / Theme Controls */}
+        <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 30,
+            gap: 12,
           }}
         >
+          {/* Language Selector Pill */}
           <button
             onClick={onLanguage}
-            style={navButton(c)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: `${c.primary}12`,
+              border: `1px solid ${c.primary}30`,
+              color: c.primary,
+              borderRadius: 20,
+              padding: "7px 14px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
           >
-            <Languages size={16} />
-            {t.language}
+            <Languages size={15} />
+            <span>{LANGUAGES.find((l) => l.code === (language || "hi"))?.name || "हिंदी"}</span>
+            <span style={{ fontSize: 10 }}>▼</span>
           </button>
 
+          {/* Login / Get Started Button */}
           <button
-            style={navButton(c)}
-            onClick={onHelp}
-          >
-            {t.help}
-          </button>
-
-          <button
-            style={navButton(c)}
             onClick={onAuth}
+            style={{
+              background: `linear-gradient(135deg, ${c.primary}, ${c.primaryDark})`,
+              color: "white",
+              border: "none",
+              borderRadius: 24,
+              padding: "9px 20px",
+              fontSize: 14,
+              fontWeight: 750,
+              cursor: "pointer",
+              boxShadow: `0 4px 14px ${c.primary}35`,
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
-            {t.registerLogin}
+            Login / Get Started
           </button>
 
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             style={iconButton(c)}
             title={t.toggleTheme}
           >
-            {theme === "light" ? (
-              <Moon size={18} />
-            ) : (
-              <Sun size={18} />
-            )}
-          </button>
-        </nav>
-
-        <div className="mobile-only" style={{ gap: 8 }}>
-          <button onClick={toggleTheme} style={iconButton(c)}>
-            {theme === "light" ? (
-              <Moon size={18} />
-            ) : (
-              <Sun size={18} />
-            )}
+            {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
 
+          {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenu(!mobileMenu)}
-            style={iconButton(c)}
+            style={{ ...iconButton(c), display: "none" }}
+            className="mobile-only-btn"
           >
-            {mobileMenu ? (
-              <X size={19} />
-            ) : (
-              <Menu size={19} />
-            )}
+            {mobileMenu ? <X size={19} /> : <Menu size={19} />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Drawer Menu */}
       {mobileMenu && (
         <div
-          className="mobile-only"
           style={{
-            padding: "0 20px 18px",
+            padding: "12px 20px 18px",
+            borderTop: `1px solid ${c.border}`,
+            background: c.surface,
+            display: "flex",
             flexDirection: "column",
             gap: 10,
           }}
         >
-          <button
-            onClick={onLanguage}
-            style={mobileMenuButton(c)}
-          >
+          <button onClick={() => { onHome(); setMobileMenu(false); }} style={mobileMenuButton(c)}>
+            Home
+          </button>
+          <button onClick={() => { onSchemes(); setMobileMenu(false); }} style={mobileMenuButton(c)}>
+            Schemes
+          </button>
+          <button onClick={() => { onLearn(); setMobileMenu(false); }} style={mobileMenuButton(c)}>
+            How It Works
+          </button>
+          <button onClick={() => { onLanguage(); setMobileMenu(false); }} style={mobileMenuButton(c)}>
             <Languages size={17} />
             {t.language}
           </button>
-
-          <button
-            onClick={onHelp}
-            style={mobileMenuButton(c)}
-          >
+          <button onClick={() => { onHelp(); setMobileMenu(false); }} style={mobileMenuButton(c)}>
             {t.help}
           </button>
-
-          <button
-            onClick={onAuth}
-            style={mobileMenuButton(c)}
-          >
-            {t.registerLogin}
+          <button onClick={() => { onAuth(); setMobileMenu(false); }} style={{ ...mobileMenuButton(c), background: `${c.primary}15`, color: c.primary, fontWeight: 750 }}>
+            Login / Get Started
           </button>
         </div>
       )}
@@ -5290,209 +5588,647 @@ function LandingScreen({
   c,
   t,
   onStart,
+  onSchemes,
+  onVoiceSearch,
+  onSearchQuery,
+  onCategoryClick,
   onLearn,
+  onAuth,
   language,
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearchSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) {
+      onStart();
+      return;
+    }
+    setIsSearching(true);
+    try {
+      if (onSearchQuery) {
+        await onSearchQuery(searchQuery);
+      } else {
+        onStart();
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleExampleClick = (exampleText) => {
+    setSearchQuery(exampleText);
+    if (onSearchQuery) {
+      onSearchQuery(exampleText);
+    }
+  };
+
   return (
-    <main className="fade">
-      <section
-        style={{
-          padding: "85px 0 75px",
-          background: `
-            radial-gradient(circle at 85% 15%, ${c.primary}18, transparent 30%),
-            radial-gradient(circle at 10% 20%, ${c.accent}15, transparent 25%)
-          `,
-        }}
-      >
-        <div className="container hero-grid">
-          <div>
-            <h1
-              className="hero-title"
-              style={{
-                fontSize: 60,
-                lineHeight: 1.05,
-                color: c.text,
-                letterSpacing: -2,
-                margin: 0,
-                maxWidth: 700,
-              }}
-            >
-              {t.governmentSchemes}
-            </h1>
-
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: c.muted,
-                maxWidth: 650,
-                margin: "25px 0",
-              }}
-            >
-              {t.landingDescription}
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 13,
-                flexWrap: "wrap",
-              }}
-            >
-              <button
-                onClick={onStart}
-                style={primaryButton(c)}
-              >
-                {t.getStarted}
-                <ArrowRight size={18} />
-              </button>
-
-            </div>
-
-          </div>
-
+    <main className="fade" style={{ width: "100%" }}>
+      {/* 1. HERO SECTION WITH INDIAN FARMER BACKGROUND */}
+      <section style={{ padding: "24px 0 32px" }}>
+        <div className="container">
           <div
             style={{
               position: "relative",
+              borderRadius: 24,
+              overflow: "hidden",
+              minHeight: 560,
+              boxShadow: "0 20px 50px rgba(15,23,42,0.08)",
+              border: `1px solid ${c.border}`,
+              background: `url('/hero_farmer.jpg') no-repeat right 15% center`,
+              backgroundSize: "cover",
               display: "flex",
-              flexDirection: "column",
-              gap: 14,
-              width: "100%",
-              transform: "perspective(1100px) rotate(3deg) rotateY(-2deg)",
-              transformOrigin: "center center",
-              opacity: 0.48,
-              filter: "saturate(0.72)",
-              transition: "transform .35s ease, opacity .35s ease",
-              animation: "heroFloat 5s ease-in-out infinite",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform =
-                "perspective(1100px) rotate(3deg) rotateY(-2deg) translateY(-8px)";
-              e.currentTarget.style.opacity = "0.56";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform =
-                "perspective(1100px) rotate(3deg) rotateY(-2deg)";
-              e.currentTarget.style.opacity = "0.48";
+              alignItems: "center",
             }}
           >
-            {[0, 1, 2].map((index) => {
-              const preview = [
-                { id: "sui", score: 97 },
-                { id: "mudra", score: 92 },
-                { id: "dksh", score: 78 },
-              ][index];
-              const scheme = SCHEMES.find((item) => item.id === preview.id);
-              const translated = SCHEME_TRANSLATIONS[language || "en"][preview.id];
+            {/* Soft Frosted Glass Gradient Overlay on Left */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: "100%",
+                background: `linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.98) 42%, rgba(255,255,255,0.85) 64%, rgba(255,255,255,0.20) 84%, transparent 100%)`,
+                zIndex: 1,
+                pointerEvents: "none",
+              }}
+            />
 
-              return (
-                <div
-                  key={preview.id}
-                  className="glass"
+            {/* Top Right Floating Quote Pill */}
+            <div
+              className="desktop-only"
+              style={{
+                position: "absolute",
+                top: 24,
+                right: 32,
+                zIndex: 3,
+                background: "rgba(255, 255, 255, 0.94)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.8)",
+                borderRadius: 30,
+                padding: "8px 20px",
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#065F46",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span>"जानकारी से आत्मनिर्भरता की ओर..."</span>
+            </div>
+
+            {/* Far Right Badge */}
+            <div
+              className="desktop-only"
+              style={{
+                position: "absolute",
+                bottom: 24,
+                right: 32,
+                zIndex: 3,
+                background: "rgba(255, 255, 255, 0.94)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.8)",
+                borderRadius: 16,
+                padding: "10px 18px",
+                fontSize: 13,
+                fontWeight: 800,
+                color: "#0F172A",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span>🌿 मेरा हक, मेरा विकास, मेरा भारत</span>
+            </div>
+
+            {/* Left Content Area */}
+            <div
+              style={{
+                position: "relative",
+                zIndex: 2,
+                maxWidth: 620,
+                padding: "48px 40px",
+              }}
+            >
+              {/* National Scheme Badge */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 16px",
+                  borderRadius: 30,
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  color: "#065F46",
+                  fontSize: 12,
+                  fontWeight: 750,
+                  marginBottom: 20,
+                  letterSpacing: 0.2,
+                }}
+              >
+                <span>🇮🇳 Sarkari Yojana. Sabke Liye. Aasan Bhasha Mein.</span>
+              </div>
+
+              {/* Main Headline */}
+              <h1
+                style={{
+                  fontSize: "clamp(38px, 5vw, 54px)",
+                  lineHeight: 1.1,
+                  letterSpacing: -1.5,
+                  margin: "0 0 16px 0",
+                  fontWeight: 900,
+                }}
+              >
+                <span style={{ color: "#0F172A", display: "block" }}>
+                  Sahi Yojana,
+                </span>
+                <span style={{ color: "#087F5B", display: "block" }}>
+                  Ek Behtar Kal
+                </span>
+              </h1>
+
+              {/* Subtitle */}
+              <p
+                style={{
+                  fontSize: 15.5,
+                  lineHeight: 1.65,
+                  color: "#475569",
+                  margin: "0 0 26px 0",
+                  maxWidth: 520,
+                  fontWeight: 500,
+                }}
+              >
+                Scheme Saathi helps you find the right government schemes based on your needs, eligibility and profile — in a language you understand.
+              </p>
+
+              {/* Search & Voice Box */}
+              <form
+                onSubmit={handleSearchSubmit}
+                style={{
+                  background: "#FFFFFF",
+                  border: "1.5px solid #E2E8F0",
+                  borderRadius: 40,
+                  padding: "6px 8px 6px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  boxShadow: "0 12px 30px rgba(0, 0, 0, 0.08)",
+                  maxWidth: 540,
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                }}
+              >
+                <Search size={20} color="#94A3B8" />
+
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Apni baat yahan likhein ya bolkar poochhein..."
                   style={{
-                    borderRadius: 22,
-                    padding: "17px 18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 15,
-                    minHeight: 104,
-                    position: "relative",
-                    overflow: "visible",
-                    boxShadow: `0 24px 55px rgba(34, 52, 45, .13), 0 8px 22px rgba(34, 52, 45, .08)`,
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                    flex: 1,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontSize: 14,
+                    color: "#1E293B",
+                    padding: "8px 0",
+                  }}
+                />
+
+                {/* Green Circular Mic Button */}
+                <button
+                  type="button"
+                  onClick={onVoiceSearch}
+                  title="अपनी भाषा में बोलकर पूछें (Voice Search)"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #087F5B, #056047)",
+                    border: "none",
+                    color: "white",
+                    display: "grid",
+                    placeItems: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(8, 127, 91, 0.35)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
+                >
+                  <Mic size={20} />
+                </button>
+              </form>
+
+              {/* Example Question Link */}
+              <div
+                style={{
+                  marginTop: 14,
+                  fontSize: 13,
+                  color: "#64748B",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>उदाहरण:</span>
+                <span
+                  onClick={() =>
+                    handleExampleClick(
+                      "मैं एक किसान हूँ, मुझे खेती के लिए कौन सी सरकारी योजना मिल सकती है?"
+                    )
+                  }
+                  style={{
+                    color: "#087F5B",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    fontWeight: 500,
                   }}
                 >
+                  "मैं एक किसान हूँ, मुझे खेती के लिए कौन सी सरकारी योजना मिल सकती है?"
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. FOUR QUICK ACTION CATEGORY CARDS */}
+      <section style={{ padding: "0 0 40px" }}>
+        <div className="container">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 16,
+            }}
+          >
+            {[
+              {
+                id: "krishi",
+                title: "कृषि योजनाएं",
+                subtitle: "Agriculture & Farming",
+                icon: <Sprout size={24} color="#087F5B" />,
+                badge: "40+ Schemes",
+              },
+              {
+                id: "rozgar",
+                title: "रोजगार योजनाएं",
+                subtitle: "MSME & Business Loans",
+                icon: <Briefcase size={24} color="#087F5B" />,
+                badge: "55+ Schemes",
+              },
+              {
+                id: "shiksha",
+                title: "शिक्षा योजनाएं",
+                subtitle: "Scholarships & Skill",
+                icon: <GraduationCap size={24} color="#087F5B" />,
+                badge: "30+ Schemes",
+              },
+              {
+                id: "swasthya",
+                title: "स्वास्थ्य योजनाएं",
+                subtitle: "Health & Social Security",
+                icon: <HeartPulse size={24} color="#087F5B" />,
+                badge: "25+ Schemes",
+              },
+            ].map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => onCategoryClick(cat.id)}
+                className="hover-card"
+                style={{
+                  background: c.surface,
+                  border: `1.5px solid ${c.border}`,
+                  borderRadius: 16,
+                  padding: "18px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.03)",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#087F5B";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(8,127,91,0.12)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = c.border;
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.03)";
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div
                     style={{
-                      width: 42,
-                      height: 42,
-                      flex: "0 0 auto",
-                      borderRadius: 13,
-                      background: `${c.primary}13`,
-                      color: c.primary,
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "#ECFDF5",
                       display: "grid",
                       placeItems: "center",
                     }}
                   >
-                    {index === 0 ? <Sparkles size={20} /> : <Landmark size={20} />}
+                    {cat.icon}
                   </div>
-
-                  <div style={{ minWidth: 0, flex: 1 }}>
+                  <div>
                     <div
                       style={{
                         fontSize: 16,
-                        fontWeight: 850,
+                        fontWeight: 800,
                         color: c.text,
                         lineHeight: 1.2,
                       }}
                     >
-                      {translated.name}
+                      {cat.title}
                     </div>
-                    <div
-                      style={{
-                        marginTop: 5,
-                        fontSize: 11,
-                        color: c.muted,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {scheme?.ministry}
+                    <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
+                      {cat.subtitle}
                     </div>
-                  </div>
-
-                  <div style={{ opacity: 1, transform: "scale(1.02)", position: "relative", zIndex: 3 }}>
-                    <AnimatedMatchRing
-                      c={c}
-                      score={preview.score}
-                      size={70}
-                    />
                   </div>
                 </div>
-              );
-            })}
+
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: `${c.primary}15`,
+                    color: c.primary,
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <ArrowRight size={16} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* 3. "MORE THAN A SCHEME SEARCH" FEATURE SECTION */}
       <section
-        className="container"
+        id="how-it-works"
         style={{
-          padding: "30px 0 90px",
+          padding: "50px 0 60px",
+          background: c.surface2,
+          borderTop: `1px solid ${c.border}`,
+          borderBottom: `1px solid ${c.border}`,
         }}
       >
-        <div className="feature-grid">
-          <Feature
-            c={c}
-            icon={<Mic size={22} />}
-            title={t.voiceFirstTitle}
-            text={t.voiceFirstText}
-          />
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 44 }}>
+            <div
+              style={{
+                color: "#087F5B",
+                fontSize: 13,
+                fontWeight: 850,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginBottom: 6,
+              }}
+            >
+              Designed for Every Indian Citizen
+            </div>
+            <h2
+              style={{
+                fontSize: 34,
+                fontWeight: 900,
+                color: c.text,
+                margin: 0,
+                letterSpacing: -0.5,
+              }}
+            >
+              More than a Scheme Search
+            </h2>
+            <p
+              style={{
+                color: c.muted,
+                fontSize: 15.5,
+                maxWidth: 580,
+                margin: "10px auto 0",
+              }}
+            >
+              Empowering citizens from spoken voice in rural villages to sanctioned bank disbursals.
+            </p>
+          </div>
 
-          <Feature
-            c={c}
-            icon={<Languages size={22} />}
-            title={t.regionalLanguages}
-            text={t.regionalLanguagesText}
-          />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: 24,
+            }}
+          >
+            {[
+              {
+                icon: <Mic size={24} color="#087F5B" />,
+                title: "Voice First",
+                badge: "अपनी भाषा में बोलकर पूछें",
+                text: "Speak naturally in your mother tongue. Bhashini & Whisper transcribe Hindi, English, Tamil, Bengali, Telugu & Marathi.",
+              },
+              {
+                icon: <Sparkles size={24} color="#087F5B" />,
+                title: "AI Profile Understanding",
+                badge: "आपकी बात से जरूरी जानकारी समझें",
+                text: "Extracts category, income, land, and business requirements automatically from normal conversational speech.",
+              },
+              {
+                icon: <BadgeCheck size={24} color="#087F5B" />,
+                title: "Explainable Eligibility",
+                badge: "क्यों eligible हैं, साफ समझें",
+                text: "Combines FAISS vector semantic search with strict government rules for 100% transparent and explainable recommendations.",
+              },
+              {
+                icon: <Calculator size={24} color="#087F5B" />,
+                title: "Financial Fit",
+                badge: "जरूरत पड़ने पर EMI / financial fit देखें",
+                text: "Simulate RBI-compliant EMI repayment schedules, calculate subsidies, and connect with Lead District Nodal Officers.",
+              },
+            ].map((feat, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: c.surface,
+                  border: `1px solid ${c.border}`,
+                  borderRadius: 20,
+                  padding: "26px 24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: "#ECFDF5",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  {feat.icon}
+                </div>
 
-          <Feature
-            c={c}
-            icon={<ShieldCheck size={22} />}
-            title={t.guidedProcess}
-            text={t.guidedProcessText}
-          />
+                <div>
+                  <h3
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 850,
+                      color: c.text,
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    {feat.title}
+                  </h3>
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 750,
+                      color: "#087F5B",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {feat.badge}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 13.5,
+                      lineHeight: 1.6,
+                      color: c.muted,
+                      margin: 0,
+                    }}
+                  >
+                    {feat.text}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Footer (Preserved) */}
+      {/* 4. TRUST STRIP & PRIMARY CTA */}
+      <section id="about-section" style={{ padding: "60px 0" }}>
+        <div className="container">
+          <div
+            style={{
+              background: `linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)`,
+              border: "1.5px solid #A7F3D0",
+              borderRadius: 24,
+              padding: "44px 36px",
+              textAlign: "center",
+              boxShadow: "0 15px 40px rgba(8,127,91,0.06)",
+            }}
+          >
+            {/* 4 Trust Badges */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 20,
+                marginBottom: 36,
+                paddingBottom: 32,
+                borderBottom: "1px solid #D1FAE5",
+              }}
+            >
+              {[
+                { label: "Government Scheme Information", icon: <Landmark size={18} color="#087F5B" /> },
+                { label: "Explainable Recommendations", icon: <Search size={18} color="#087F5B" /> },
+                { label: "Multilingual Experience", icon: <Languages size={18} color="#087F5B" /> },
+                { label: "Voice Enabled AI", icon: <Mic size={18} color="#087F5B" /> },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    fontSize: 13.5,
+                    fontWeight: 750,
+                    color: "#065F46",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: "#DCFCE7",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {b.icon}
+                  </div>
+                  <span>{b.label}</span>
+                </div>
+              ))}
+            </div>
 
+            {/* Primary Action Button */}
+            <button
+              onClick={onStart}
+              style={{
+                background: "linear-gradient(135deg, #087F5B 0%, #056047 100%)",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: 40,
+                padding: "18px 44px",
+                fontSize: 18,
+                fontWeight: 850,
+                cursor: "pointer",
+                boxShadow: "0 12px 30px rgba(8, 127, 91, 0.35)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 12,
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
+            >
+              <span>अपनी सही योजना खोजें</span>
+              <ArrowRight size={22} />
+            </button>
+
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#64748B",
+                marginTop: 14,
+              }}
+            >
+              A step towards a brighter tomorrow 🇮🇳
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. FOOTER */}
       <footer
         style={{
-          padding: "28px 0",
+          padding: "32px 0 28px",
           borderTop: `1px solid ${c.border}`,
+          background: c.surface,
         }}
       >
         <div
@@ -5505,56 +6241,64 @@ function LandingScreen({
             flexWrap: "wrap",
             fontSize: 13,
             color: c.muted,
-            fontFamily: "Inter, Arial, sans-serif",
           }}
         >
-          <span
-            style={{
-              color: c.text,
-              fontWeight: 750,
-            }}
-          >
-            SchemeSaathi
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: `linear-gradient(135deg, ${c.primary}, ${c.primaryDark})`,
+                color: "white",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <Sprout size={16} />
+            </div>
+            <span style={{ color: c.text, fontWeight: 800, fontSize: 15 }}>
+              Scheme Saathi
+            </span>
+            <span style={{ color: c.muted, fontSize: 13 }}>
+              • हर योजना, आपके साथ
+            </span>
+          </div>
 
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: 0,
+              gap: 20,
               flexWrap: "wrap",
             }}
           >
-            {[
-              t.footerAbout,
-              t.footerContact,
-              t.footerPrivacy,
-              t.footerTerms,
-            ].map((item, index) => (
-              <span
-                key={item}
-                style={{
-                  color: c.muted,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {index > 0 && (
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      margin: "0 10px",
-                      color: c.border,
-                    }}
-                  >
-                    |
-                  </span>
-                )}
-                {item}
-              </span>
-            ))}
+            <span
+              onClick={onSchemes}
+              style={{ cursor: "pointer", color: c.muted, transition: "color 0.2s" }}
+              onMouseEnter={(e) => (e.target.style.color = c.primary)}
+              onMouseLeave={(e) => (e.target.style.color = c.muted)}
+            >
+              Schemes
+            </span>
+            <span
+              onClick={onLearn}
+              style={{ cursor: "pointer", color: c.muted, transition: "color 0.2s" }}
+              onMouseEnter={(e) => (e.target.style.color = c.primary)}
+              onMouseLeave={(e) => (e.target.style.color = c.muted)}
+            >
+              How It Works
+            </span>
+            <span
+              onClick={onAuth}
+              style={{ cursor: "pointer", color: c.muted, transition: "color 0.2s" }}
+              onMouseEnter={(e) => (e.target.style.color = c.primary)}
+              onMouseLeave={(e) => (e.target.style.color = c.muted)}
+            >
+              Login
+            </span>
+            <span>|</span>
+            <span>SIH26092 MoSJE</span>
           </div>
         </div>
       </footer>
@@ -6299,6 +7043,7 @@ function AuthScreen({
                 ...primaryButton(c),
                 width: "100%",
                 marginTop: 10,
+                borderRadius: 14,
               }}
             >
               {mode === "register"
@@ -6307,6 +7052,38 @@ function AuthScreen({
               <ArrowRight size={18} />
             </button>
           </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0" }}>
+            <div style={{ flex: 1, height: 1, background: c.border }} />
+            <span style={{ fontSize: 12, color: c.muted, fontWeight: 700 }}>OR</span>
+            <div style={{ flex: 1, height: 1, background: c.border }} />
+          </div>
+
+          <GoogleAuthButton
+            c={c}
+            onAuthSuccess={(sessionData) => {
+              const u = sessionData?.user || sessionData;
+              if (u) {
+                setUser({
+                  name: u.name || "Google User",
+                  email: u.email || "",
+                  role: u.role || "applicant",
+                });
+              }
+              onSuccess();
+            }}
+            onSuccess={(sessionData) => {
+              const u = sessionData?.user || sessionData;
+              if (u) {
+                setUser({
+                  name: u.name || "Google User",
+                  email: u.email || "",
+                  role: u.role || "applicant",
+                });
+              }
+              onSuccess();
+            }}
+          />
 
 
         </div>
@@ -6678,7 +7455,13 @@ function ProfileScreen({
       recognition.onend = () => setListening(false);
       recognition.onerror = (event) => {
         setListening(false);
-        if (event.error !== "aborted") setVoiceError(`Microphone error: ${event.error}. Please try again.`);
+        if (event.error === "no-speech") {
+          setVoiceError("आवाज़ सुनाई नहीं दी। कृपया दोबारा बोलें या नीचे विकल्प चुनें। (No speech detected. Please speak into your microphone or choose an option.)");
+        } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setVoiceError("माइक्रोफ़ोन अनुमति आवश्यक है। कृपया ब्राउज़र में माइक की अनुमति दें। (Microphone permission needed. Please allow microphone access in your browser.)");
+        } else if (event.error !== "aborted") {
+          setVoiceError(`Voice input note: ${event.error}. Please try speaking again or choose an option below.`);
+        }
       };
       recognition.onresult = (event) => {
         const transcript = Array.from(event.results)

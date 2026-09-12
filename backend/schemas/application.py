@@ -40,6 +40,7 @@ class ApplicationCreateRequest(BaseModel):
     scheme_name: Optional[str] = None
     partner_id: Optional[str] = None
     partner_name: Optional[str] = None
+    user_id: Optional[str] = None
     category: Optional[str] = None
     income: Optional[int] = None
     state: Optional[str] = None
@@ -51,6 +52,7 @@ class ApplicationCreateRequest(BaseModel):
 class ApplicationSubmitRequest(BaseModel):
     scheme_id: Optional[str] = None
     scheme_name: Optional[str] = None
+    user_id: Optional[str] = None
     category: Optional[str] = None
     income: Optional[int] = None
     state: Optional[str] = None
@@ -67,6 +69,7 @@ class ApplicationStatusTransitionRequest(BaseModel):
 
 class ApplicationStatusResponse(BaseModel):
     application_id: str
+    user_id: Optional[str] = None
     scheme_id: Optional[str] = None
     scheme_name: Optional[str] = None
     partner_id: Optional[str] = None
@@ -83,6 +86,7 @@ class ApplicationStatusResponse(BaseModel):
 
 class ApplicationDetailResponse(BaseModel):
     application_id: str
+    user_id: Optional[str] = None
     scheme_id: str
     scheme_name: Optional[str] = None
     partner_id: Optional[str] = None

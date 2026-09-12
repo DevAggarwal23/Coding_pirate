@@ -141,9 +141,10 @@ export function PartnerMap({
       const res = await routeChannelPartners(payload);
       if (res && res.success) {
         setRoutingData(res);
-        if (res.primary_partner && (!selectedPartner || !res.partners?.some(p => p.partner_id === selectedPartner.partner_id))) {
+        const defaultPartner = res.primary_partner || (res.partners && res.partners.length > 0 ? res.partners[0] : null);
+        if (defaultPartner && (!selectedPartner || !res.partners?.some(p => p.partner_id === selectedPartner.partner_id))) {
           if (setSelectedPartner) {
-            setSelectedPartner(res.primary_partner);
+            setSelectedPartner(defaultPartner);
           }
         }
       } else {

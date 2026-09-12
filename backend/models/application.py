@@ -19,7 +19,10 @@ class Application(Base):
     )
 
     application_id: Mapped[str] = mapped_column(String(20), primary_key=True)
-    profile_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True
+    )
+    profile_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user_profiles.profile_id"), nullable=True
     )
     scheme_id: Mapped[str] = mapped_column(
@@ -46,4 +49,3 @@ class Application(Base):
         """Generate APP-2026-XXXXX style application ID."""
         suffix = "".join(random.choices(string.digits, k=5))
         return f"APP-2026-{suffix}"
-

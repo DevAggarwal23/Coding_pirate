@@ -13,3 +13,4 @@ export * from "./partnerApi.js";
 export * from "./documentApi.js";
 export * from "./schemeApi.js";
 export * from "./chatApi.js";
+export * from "./adminApi.js";
