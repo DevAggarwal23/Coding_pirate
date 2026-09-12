@@ -82,11 +82,11 @@ jobs:
 
       - name: Run Pytest Suite
         env:
-          ENVIRONMENT: test
+          PYTHONPATH: backend
+          ENVIRONMENT: testing
           SECRET_KEY: test_secret_key_sih26092_ci_runner
           FAISS_INDEX_PATH: data/scheme_vectors.index
           SCHEMES_JSON_PATH: data/schemes.json
-          DATABASE_URL: sqlite+aiosqlite:///test_ci.db
         run: |
           pytest backend/tests/ -q
 
