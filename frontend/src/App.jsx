@@ -7703,6 +7703,489 @@ function WelcomeScreen({
   );
 }
 
+const PROFILE_I18N = {
+  en: {
+    badge: "VOICE ASSISTANCE",
+    heading: "Tell us about yourself",
+    listening: "Listening...",
+    tapToAnswer: "Tap the microphone to answer",
+    hearQuestion: "Hear question",
+    heardPrefix: "Heard: ",
+    ideaNatural: "Speak your complete idea naturally.",
+    answerMatchedAuto: "Your spoken answer will be matched automatically.",
+    voiceNotSupported: "Voice recognition is not available in this browser. You can type or choose an option instead.",
+    questions: {
+      age: {
+        title: "What is your age?",
+        hint: "Tell us your age in years.",
+        placeholder: "Enter your age",
+      },
+      category: {
+        title: "What category do you belong to?",
+        hint: "This helps identify schemes you may qualify for.",
+        options: [
+          { value: "SC", label: "SC" },
+          { value: "ST", label: "ST" },
+          { value: "OBC", label: "OBC" },
+          { value: "Woman", label: "Woman" },
+          { value: "Minority", label: "Minority" },
+          { value: "PwD", label: "Divyangjan (PwD)" },
+          { value: "General", label: "General" },
+        ],
+      },
+      income: {
+        title: "What is your yearly income?",
+        hint: "Select the income range that best matches you.",
+        options: [
+          { value: "Under ₹1 lakh", label: "Under ₹1 lakh" },
+          { value: "₹1–2 lakh", label: "₹1–2 lakh" },
+          { value: "₹2–5 lakh", label: "₹2–5 lakh" },
+          { value: "₹5–10 lakh", label: "₹5–10 lakh" },
+          { value: "Above ₹10 lakh", label: "Above ₹10 lakh" },
+        ],
+      },
+      occupation: {
+        title: "What is your occupation?",
+        hint: "Choose the option that best describes your work.",
+        options: [
+          { value: "Student", label: "Student" },
+          { value: "Salaried Employee", label: "Salaried Employee" },
+          { value: "Self-employed", label: "Self-employed" },
+          { value: "Business Owner", label: "Business Owner" },
+          { value: "Farmer", label: "Farmer" },
+          { value: "Artisan / Craftsperson", label: "Artisan / Craftsperson" },
+          { value: "Unemployed", label: "Unemployed" },
+          { value: "Other", label: "Other" },
+        ],
+      },
+      ideaCategory: {
+        title: "What is your idea category?",
+        hint: "Choose the category that best matches your business idea.",
+        options: [
+          { value: "Agriculture & Allied", label: "Agriculture & Allied" },
+          { value: "Food & Catering", label: "Food & Catering" },
+          { value: "Retail & Trading", label: "Retail & Trading" },
+          { value: "Manufacturing", label: "Manufacturing" },
+          { value: "Handicrafts & Textiles", label: "Handicrafts & Textiles" },
+          { value: "Services", label: "Services" },
+          { value: "Technology & Digital", label: "Technology & Digital" },
+          { value: "Other", label: "Other" },
+        ],
+      },
+      location: {
+        title: "Where is your business located?",
+        hint: "Enter your state, district or city.",
+        placeholder: "e.g. Mathura, Uttar Pradesh",
+      },
+      idea: {
+        title: "Tell us about your idea",
+        hint: "Describe your complete idea. You can type it or speak it using the microphone.",
+        placeholder: "Type your complete business idea here, or use the microphone to speak it...",
+      },
+    },
+  },
+  hi: {
+    badge: "आवाज़ सहायता",
+    heading: "अपने बारे में बताएं",
+    listening: "सुन रहे हैं...",
+    tapToAnswer: "उत्तर देने के लिए माइक दबाएं",
+    hearQuestion: "सवाल सुनें",
+    heardPrefix: "सुना: ",
+    ideaNatural: "स्वाभाविक रूप से अपना पूरा विचार बोलें।",
+    answerMatchedAuto: "आपका बोला गया उत्तर अपने आप दर्ज हो जाएगा।",
+    voiceNotSupported: "इस ब्राउज़र में आवाज़ पहचान उपलब्ध नहीं है। आप टाइप कर सकते हैं या विकल्प चुन सकते हैं।",
+    questions: {
+      age: {
+        title: "आपकी आयु कितनी है?",
+        hint: "वर्षों में अपनी आयु बताएं।",
+        placeholder: "अपनी आयु दर्ज करें",
+      },
+      category: {
+        title: "आप किस श्रेणी से संबंधित हैं?",
+        hint: "यह उन योजनाओं की पहचान करने में मदद करता है जिनके लिए आप पात्र हो सकते हैं।",
+        options: [
+          { value: "SC", label: "अनुसूचित जाति (SC)" },
+          { value: "ST", label: "अनुसूचित जनजाति (ST)" },
+          { value: "OBC", label: "अन्य पिछड़ा वर्ग (OBC)" },
+          { value: "Woman", label: "महिला उद्यमी" },
+          { value: "Minority", label: "अल्पसंख्यक" },
+          { value: "PwD", label: "दिव्यांगजन (PwD)" },
+          { value: "General", label: "सामान्य (General)" },
+        ],
+      },
+      income: {
+        title: "आपकी वार्षिक आय कितनी है?",
+        hint: "वह आय सीमा चुनें जो आपके सबसे करीब हो।",
+        options: [
+          { value: "Under ₹1 lakh", label: "₹1 लाख से कम" },
+          { value: "₹1–2 lakh", label: "₹1–2 लाख" },
+          { value: "₹2–5 lakh", label: "₹2–5 लाख" },
+          { value: "₹5–10 lakh", label: "₹5–10 लाख" },
+          { value: "Above ₹10 lakh", label: "₹10 लाख से अधिक" },
+        ],
+      },
+      occupation: {
+        title: "आपका व्यवसाय या पेशा क्या है?",
+        hint: "वह विकल्प चुनें जो आपके काम का सबसे अच्छा वर्णन करता है।",
+        options: [
+          { value: "Student", label: "छात्र / विद्यार्थी" },
+          { value: "Salaried Employee", label: "वेतनभोगी कर्मचारी" },
+          { value: "Self-employed", label: "स्व-रोजगार" },
+          { value: "Business Owner", label: "व्यवसाय मालिक / व्यापारी" },
+          { value: "Farmer", label: "किसान / कृषक" },
+          { value: "Artisan / Craftsperson", label: "कारीगर / शिल्पकार" },
+          { value: "Unemployed", label: "बेरोजगार / काम की तलाश" },
+          { value: "Other", label: "अन्य" },
+        ],
+      },
+      ideaCategory: {
+        title: "आपके विचार या उद्यम की श्रेणी क्या है?",
+        hint: "वह श्रेणी चुनें जो आपके व्यावसायिक विचार से मेल खाती हो।",
+        options: [
+          { value: "Agriculture & Allied", label: "कृषि और संबंधित क्षेत्र" },
+          { value: "Food & Catering", label: "खाद्य और खानपान" },
+          { value: "Retail & Trading", label: "खुदरा और व्यापार (दुकान)" },
+          { value: "Manufacturing", label: "विनिर्माण / उत्पादन इकाई" },
+          { value: "Handicrafts & Textiles", label: "हस्तशिल्प और वस्त्र" },
+          { value: "Services", label: "सेवा क्षेत्र" },
+          { value: "Technology & Digital", label: "प्रौद्योगिकी और डिजिटल" },
+          { value: "Other", label: "अन्य व्यवसाय" },
+        ],
+      },
+      location: {
+        title: "आपका व्यवसाय कहाँ स्थित है?",
+        hint: "अपना राज्य, जिला या शहर दर्ज करें।",
+        placeholder: "जैसे मथुरा, उत्तर प्रदेश",
+      },
+      idea: {
+        title: "अपने व्यवसाय या विचार के बारे में बताएं",
+        hint: "अपने विचार का पूरा विवरण दें। आप इसे टाइप कर सकते हैं या माइक दबाकर बोल सकते हैं।",
+        placeholder: "अपने व्यवसाय के विचार को यहाँ लिखें या माइक का उपयोग करके बोलें...",
+      },
+    },
+  },
+  bn: {
+    badge: "ভয়েস সহায়তা",
+    heading: "আপনার সম্পর্কে বলুন",
+    listening: "শুনছি...",
+    tapToAnswer: "উত্তর দিতে মাইক চাপুন",
+    hearQuestion: "প্রশ্ন শুনুন",
+    heardPrefix: "শোনা গেছে: ",
+    ideaNatural: "আপনার সম্পূর্ণ ধারণা স্বাভাবিকভাবে বলুন।",
+    answerMatchedAuto: "আপনার বলা উত্তর স্বয়ংক্রিয়ভাবে মেলানো হবে।",
+    voiceNotSupported: "এই ব্রাউজারে ভয়েস সনাক্তকরণ সমর্থিত নয়। আপনি টাইপ করতে পারেন।",
+    questions: {
+      age: {
+        title: "আপনার বয়স কত?",
+        hint: "বছরে আপনার বয়স বলুন।",
+        placeholder: "আপনার বয়স লিখুন",
+      },
+      category: {
+        title: "আপনি কোন শ্রেণীর অন্তর্গত?",
+        hint: "এটি আপনি যোগ্য হতে পারেন এমন প্রকল্প সনাক্ত করতে সহায়তা করে।",
+        options: [
+          { value: "SC", label: "তফসিলি জাতি (SC)" },
+          { value: "ST", label: "তফসিলি উপজাতি (ST)" },
+          { value: "OBC", label: "অন্যান্য অনগ্রসর শ্রেণী (OBC)" },
+          { value: "Woman", label: "নারী উদ্যোক্তা" },
+          { value: "Minority", label: "সংখ্যালঘু" },
+          { value: "PwD", label: "দিব্যাঙ্গজন (PwD)" },
+          { value: "General", label: "সাধারণ (General)" },
+        ],
+      },
+      income: {
+        title: "আপনার বার্ষিক আয় কত?",
+        hint: "আপনার আয়ের সাথে মেলে এমন পরিসর নির্বাচন করুন।",
+        options: [
+          { value: "Under ₹1 lakh", label: "১ লাখ টাকার নিচে" },
+          { value: "₹1–2 lakh", label: "₹১–২ লাখ" },
+          { value: "₹2–5 lakh", label: "₹২–৫ লাখ" },
+          { value: "₹5–10 lakh", label: "₹৫–১০ লাখ" },
+          { value: "Above ₹10 lakh", label: "১০ লাখ টাকার বেশি" },
+        ],
+      },
+      occupation: {
+        title: "আপনার পেশা কি?",
+        hint: "আপনার কাজের সাথে সবচেয়ে মানানসই বিকল্পটি নির্বাচন করুন।",
+        options: [
+          { value: "Student", label: "ছাত্র / শিক্ষার্থী" },
+          { value: "Salaried Employee", label: "বেতনভোগী কর্মচারী" },
+          { value: "Self-employed", label: "স্বনিযুক্ত" },
+          { value: "Business Owner", label: "ব্যবসা মালিক" },
+          { value: "Farmer", label: "কৃষক" },
+          { value: "Artisan / Craftsperson", label: "কারিগর / শিল্পী" },
+          { value: "Unemployed", label: "বেকার" },
+          { value: "Other", label: "অন্যান্য" },
+        ],
+      },
+      ideaCategory: {
+        title: "আপনার উদ্যোগ বা ভাবনার শ্রেণী কি?",
+        hint: "আপনার ব্যবসার ধারণার সাথে মেলে এমন শ্রেণী বেছে নিন।",
+        options: [
+          { value: "Agriculture & Allied", label: "কৃষি ও সংশ্লিষ্ট ক্ষেত্র" },
+          { value: "Food & Catering", label: "খাদ্য ও ক্যাটারিং" },
+          { value: "Retail & Trading", label: "খুচরা ও বাণিজ্য" },
+          { value: "Manufacturing", label: "ম্যানুফ্যাকচারিং / উৎপাদন" },
+          { value: "Handicrafts & Textiles", label: "হস্তশিল্প ও বস্ত্র" },
+          { value: "Services", label: "সেবামূলক কাজ" },
+          { value: "Technology & Digital", label: "প্রযুক্তি ও ডিজিটাল" },
+          { value: "Other", label: "অন্যান্য" },
+        ],
+      },
+      location: {
+        title: "আপনার ব্যবসা কোথায় অবস্থিত?",
+        hint: "আপনার রাজ্য, জেলা বা শহর লিখুন।",
+        placeholder: "যেমন কলকাতা, পশ্চিমবঙ্গ",
+      },
+      idea: {
+        title: "আপনার পরিকল্পনা বা উদ্যোগ সম্পর্কে বলুন",
+        hint: "আপনার সম্পূর্ণ ধারণা বর্ণনা করুন। আপনি টাইপ করতে বা মাইক দিয়ে বলতে পারেন।",
+        placeholder: "আপনার সম্পূর্ণ ব্যবসায়িক ধারণা এখানে লিখুন, অথবা মাইক ব্যবহার করে বলুন...",
+      },
+    },
+  },
+  ta: {
+    badge: "குரல் உதவி",
+    heading: "உங்களைப் பற்றி சொல்லுங்கள்",
+    listening: "கேட்கிறது...",
+    tapToAnswer: "பதிலளிக்க மைக்கை அழுத்தவும்",
+    hearQuestion: "கேள்வியைக் கேளுங்கள்",
+    heardPrefix: "கேட்டது: ",
+    ideaNatural: "உங்கள் யோசனையை இயல்பாகப் பேசுங்கள்.",
+    answerMatchedAuto: "உங்கள் பதில் தானாகவே பொருத்தப்படும்.",
+    voiceNotSupported: "இந்த உலாவியில் குரல் அறிதல் ஆதரிக்கப்படவில்லை.",
+    questions: {
+      age: {
+        title: "உங்கள் வயது என்ன?",
+        hint: "ஆண்டுகளில் உங்கள் வயதைக் கூறவும்.",
+        placeholder: "உங்கள் வயதை உள்ளிடவும்",
+      },
+      category: {
+        title: "நீங்கள் எந்தப் பிரிவைச் சேர்ந்தவர்?",
+        hint: "நீங்கள் தகுதிபெறும் திட்டங்களைக் கண்டறிய இது உதவுகிறது.",
+        options: [
+          { value: "SC", label: "பட்டியல் சாதி (SC)" },
+          { value: "ST", label: "பழங்குடியினர் (ST)" },
+          { value: "OBC", label: "இதர பிற்படுத்தப்பட்டோர் (OBC)" },
+          { value: "Woman", label: "பெண் தொழில்முனைவோர்" },
+          { value: "Minority", label: "சிறுபான்மையினர்" },
+          { value: "PwD", label: "மாற்றுத்திறனாளி (PwD)" },
+          { value: "General", label: "பொது (General)" },
+        ],
+      },
+      income: {
+        title: "உங்கள் வருடாந்திர வருமானம் என்ன?",
+        hint: "உங்களுக்கு மிகவும் பொருத்தமான வருமான வரம்பைத் தேர்ந்தெடுக்கவும்.",
+        options: [
+          { value: "Under ₹1 lakh", label: "₹1 லட்சத்திற்கும் குறைவு" },
+          { value: "₹1–2 lakh", label: "₹1–2 லட்சம்" },
+          { value: "₹2–5 lakh", label: "₹2–5 லட்சம்" },
+          { value: "₹5–10 lakh", label: "₹5–10 லட்சம்" },
+          { value: "Above ₹10 lakh", label: "₹10 லட்சத்திற்கு மேல்" },
+        ],
+      },
+      occupation: {
+        title: "உங்கள் தொழில் என்ன?",
+        hint: "உங்கள் பணியை விவரிக்கும் விருப்பத்தைத் தேர்ந்தெடுக்கவும்.",
+        options: [
+          { value: "Student", label: "மாணவர்" },
+          { value: "Salaried Employee", label: "மாதச் சம்பளப் பணியாளர்" },
+          { value: "Self-employed", label: "சுயதொழில் செய்பவர்" },
+          { value: "Business Owner", label: "வணிக உரிமையாளர்" },
+          { value: "Farmer", label: "விவசாயி" },
+          { value: "Artisan / Craftsperson", label: "கைவினைஞர்" },
+          { value: "Unemployed", label: "வேலையற்றவர்" },
+          { value: "Other", label: "மற்றவை" },
+        ],
+      },
+      ideaCategory: {
+        title: "உங்கள் வணிக யோசனையின் பிரிவு என்ன?",
+        hint: "உங்கள் வணிக யோசனைக்கு மிகவும் பொருத்தமான பிரிவைத் தேர்ந்தெடுக்கவும்.",
+        options: [
+          { value: "Agriculture & Allied", label: "விவசாயம் மற்றும் தொடர்புடையவை" },
+          { value: "Food & Catering", label: "உணவு மற்றும் கேட்டரிங்" },
+          { value: "Retail & Trading", label: "சில்லறை மற்றும் வர்த்தகம்" },
+          { value: "Manufacturing", label: "உற்பத்தி" },
+          { value: "Handicrafts & Textiles", label: "கைவினை மற்றும் ஜவுளி" },
+          { value: "Services", label: "சேவைகள்" },
+          { value: "Technology & Digital", label: "தொழில்நுட்பம் மற்றும் டிஜிட்டல்" },
+          { value: "Other", label: "மற்றவை" },
+        ],
+      },
+      location: {
+        title: "உங்கள் தொழில் எங்கு அமைந்துள்ளது?",
+        hint: "உங்கள் மாநிலம், மாவட்டம் அல்லது நகரத்தை உள்ளிடவும்.",
+        placeholder: "எ.கா. மதுரை, தமிழ்நாடு",
+      },
+      idea: {
+        title: "உங்கள் வணிக யோசனை பற்றி சொல்லுங்கள்",
+        hint: "உங்கள் யோசனையை விவரிக்கவும். தட்டச்சு செய்யலாம் அல்லது மைக் மூலம் பேசலாம்.",
+        placeholder: "உங்கள் யோசனையை இங்கே தட்டச்சு செய்யவும் அல்லது மைக் மூலம் பேசவும்...",
+      },
+    },
+  },
+  mr: {
+    badge: "आवाज सहाय्य",
+    heading: "तुमच्याबद्दल सांगा",
+    listening: "ऐकत आहे...",
+    tapToAnswer: "उत्तर देण्यासाठी माइक दाबा",
+    hearQuestion: "प्रश्न ऐका",
+    heardPrefix: "ऐकले: ",
+    ideaNatural: "तुमची संपूर्ण कल्पना नैसर्गिकपणे सांगा.",
+    answerMatchedAuto: "तुमचे उत्तर आपोआप नोंदवले जाईल.",
+    voiceNotSupported: "या ब्राउझरमध्ये आवाज ओळख उपलब्ध नाही.",
+    questions: {
+      age: {
+        title: "तुमचे वय किती आहे?",
+        hint: "वर्षांमध्ये तुमचे वय सांगा.",
+        placeholder: "तुमचे वय प्रविष्ट करा",
+      },
+      category: {
+        title: "तुम्ही कोणत्या प्रवर्गातील आहात?",
+        hint: "हे तुम्ही पात्र असलेल्या योजना ओळखण्यात मदत करते.",
+        options: [
+          { value: "SC", label: "अनुसूचित जाती (SC)" },
+          { value: "ST", label: "अनुसूचित जमाती (ST)" },
+          { value: "OBC", label: "इतर मागास प्रवर्ग (OBC)" },
+          { value: "Woman", label: "महिला उद्योजक" },
+          { value: "Minority", label: "अल्पसंख्याक" },
+          { value: "PwD", label: "दिव्यांगजन (PwD)" },
+          { value: "General", label: "सामान्य (General)" },
+        ],
+      },
+      income: {
+        title: "तुमचे वार्षिक उत्पन्न किती आहे?",
+        hint: "तुमच्याशी जुळणारी उत्पन्नाची श्रेणी निवडा.",
+        options: [
+          { value: "Under ₹1 lakh", label: "₹1 लाखापेक्षा कमी" },
+          { value: "₹1–2 lakh", label: "₹1–2 लाख" },
+          { value: "₹2–5 lakh", label: "₹2–5 लाख" },
+          { value: "₹5–10 lakh", label: "₹5–10 लाख" },
+          { value: "Above ₹10 lakh", label: "₹10 लाखापेक्षा जास्त" },
+        ],
+      },
+      occupation: {
+        title: "तुमचा व्यवसाय किंवा पेशा काय आहे?",
+        hint: "तुमच्या कामाचे सर्वोत्तम वर्णन करणारा पर्याय निवडा.",
+        options: [
+          { value: "Student", label: "विद्यार्थी" },
+          { value: "Salaried Employee", label: "पगारदार कर्मचारी" },
+          { value: "Self-employed", label: "स्वयंरोजगार" },
+          { value: "Business Owner", label: "व्यवसाय मालक" },
+          { value: "Farmer", label: "शेतकरी" },
+          { value: "Artisan / Craftsperson", label: "कारागीर / शिल्पकार" },
+          { value: "Unemployed", label: "बेरोजगार" },
+          { value: "Other", label: "इतर" },
+        ],
+      },
+      ideaCategory: {
+        title: "तुमच्या कल्पनेची किंवा उद्योगाची श्रेणी कोणती?",
+        hint: "तुमच्या व्यवसाय कल्पनेशी जुळणारी श्रेणी निवडा.",
+        options: [
+          { value: "Agriculture & Allied", label: "शेती आणि संलग्न क्षेत्र" },
+          { value: "Food & Catering", label: "अन्न आणि केटरिंग" },
+          { value: "Retail & Trading", label: "किरकोळ आणि व्यापार" },
+          { value: "Manufacturing", label: "उत्पादन / मॅन्युफॅक्चरिंग" },
+          { value: "Handicrafts & Textiles", label: "हस्तकला आणि वस्त्रोद्योग" },
+          { value: "Services", label: "सेवा क्षेत्र" },
+          { value: "Technology & Digital", label: "तंत्रज्ञान आणि डिजिटल" },
+          { value: "Other", label: "इतर" },
+        ],
+      },
+      location: {
+        title: "तुमचा व्यवसाय कुठे स्थित आहे?",
+        hint: "तुमचे राज्य, जिल्हा किंवा शहर प्रविष्ट करा.",
+        placeholder: "उदा. पुणे, महाराष्ट्र",
+      },
+      idea: {
+        title: "तुमच्या व्यवसाय कल्पनेबद्दल सांगा",
+        hint: "तुमच्या कल्पनेचे वर्णन करा. तुम्ही टाईप करू शकता किंवा माईक वापरू शकता.",
+        placeholder: "तुमची व्यवसाय कल्पना येथे टाईप करा किंवा बोलण्यासाठी मायक्रोफोन वापरा...",
+      },
+    },
+  },
+  te: {
+    badge: "వాయిస్ సహాయం",
+    heading: "మీ గురించి చెప్పండి",
+    listening: "వింటున్నాము...",
+    tapToAnswer: "సమాధానం ఇవ్వడానికి మైక్ నొక్కండి",
+    hearQuestion: "ప్రశ్న వినండి",
+    heardPrefix: "వినబడింది: ",
+    ideaNatural: "మీ పూర్తి ఆలోచనను సహజంగా మాట్లాడండి.",
+    answerMatchedAuto: "మీరు మాట్లాడిన సమాధానం స్వయంచాలకంగా సరిపోల్చబడుతుంది.",
+    voiceNotSupported: "ఈ బ్రౌజర్‌లో వాయిస్ గుర్తింపు అందుబాటులో లేదు.",
+    questions: {
+      age: {
+        title: "మీ వయస్సు ఎంత?",
+        hint: "సంవత్సరాలలో మీ వయస్సు చెప్పండి.",
+        placeholder: "మీ వయస్సును నమోదు చేయండి",
+      },
+      category: {
+        title: "మీరు ఏ వర్గానికి చెందినవారు?",
+        hint: "మీరు అర్హత సాధించే పథకాలను గుర్తించడంలో ఇది సహాయపడుతుంది.",
+        options: [
+          { value: "SC", label: "షెడ్యూల్డ్ కులం (SC)" },
+          { value: "ST", label: "షెడ్యూల్డ్ తెగ (ST)" },
+          { value: "OBC", label: "ఇతర వెనుకబడిన తరగతి (OBC)" },
+          { value: "Woman", label: "మహిళా వ్యవస్థాపకురాలు" },
+          { value: "Minority", label: "మైనారిటీ" },
+          { value: "PwD", label: "దివ్యాంగులు (PwD)" },
+          { value: "General", label: "జనరల్ (General)" },
+        ],
+      },
+      income: {
+        title: "మీ వార్షిక ఆదాయం ఎంత?",
+        hint: "మీకు అత్యంత సరిపోయే ఆదాయ పరిధిని ఎంచుకోండి.",
+        options: [
+          { value: "Under ₹1 lakh", label: "₹1 లక్ష కంటే తక్కువ" },
+          { value: "₹1–2 lakh", label: "₹1–2 లక్షలు" },
+          { value: "₹2–5 lakh", label: "₹2–5 లక్షలు" },
+          { value: "₹5–10 lakh", label: "₹5–10 లక్షలు" },
+          { value: "Above ₹10 lakh", label: "₹10 లక్షలకు పైగా" },
+        ],
+      },
+      occupation: {
+        title: "మీ వృత్తి ఏమిటి?",
+        hint: "మీ పనిని ఉత్తమంగా వివరించే ఎంపికను ఎంచుకోండి.",
+        options: [
+          { value: "Student", label: "విద్యార్థి" },
+          { value: "Salaried Employee", label: "జీతం పొందే ఉద్యోగి" },
+          { value: "Self-employed", label: "స్వయం ఉపాధి" },
+          { value: "Business Owner", label: "వ్యాపార యజమాని" },
+          { value: "Farmer", label: "రైతు" },
+          { value: "Artisan / Craftsperson", label: "చేతివృత్తిదారుడు" },
+          { value: "Unemployed", label: "నిరుద్యోగి" },
+          { value: "Other", label: "ఇతర" },
+        ],
+      },
+      ideaCategory: {
+        title: "మీ వ్యాపార ఆలోచన వర్గం ఏమిటి?",
+        hint: "మీ ఆలోచనతో సరిపోయే వర్గాన్ని ఎంచుకోండి.",
+        options: [
+          { value: "Agriculture & Allied", label: "వ్యవసాయం మరియు అనుబంధ రంగాలు" },
+          { value: "Food & Catering", label: "ఆహారం మరియు క్యాటరింగ్" },
+          { value: "Retail & Trading", label: "రిటైల్ మరియు వ్యాపారం" },
+          { value: "Manufacturing", label: "తయారీ / మాన్యుఫ్యాక్చరింగ్" },
+          { value: "Handicrafts & Textiles", label: "హస్తకళలు మరియు వస్త్రాలు" },
+          { value: "Services", label: "సేవలు" },
+          { value: "Technology & Digital", label: "సాంకేతికత మరియు డిజిటల్" },
+          { value: "Other", label: "ఇతర" },
+        ],
+      },
+      location: {
+        title: "మీ వ్యాపారం ఎక్కడ ఉంది?",
+        hint: "మీ రాష్ట్రం, జిల్లా లేదా నగరాన్ని నమోదు చేయండి.",
+        placeholder: "ఉదా. విజయవాడ, ఆంధ్రప్రదేశ్",
+      },
+      idea: {
+        title: "మీ వ్యాపార ఆలోచన గురించి చెప్పండి",
+        hint: "మీ ఆలోచనను వివరించండి. మీరు టైప్ చేయవచ్చు లేదా మైక్ ఉపయోగించవచ్చు.",
+        placeholder: "మీ ఆలోచనను ఇక్కడ టైప్ చేయండి లేదా మాట్లాడటానికి మైక్ ఉపయోగించండి...",
+      },
+    },
+  },
+};
+
 function ProfileScreen({
   c,
   t,
@@ -7716,48 +8199,67 @@ function ProfileScreen({
   onBack,
   onFinish,
 }) {
+  const curLang = (language && PROFILE_I18N[language])
+    ? language
+    : (t && t.continue === "जारी रखें" ? "hi"
+      : t && t.continue === "চালিয়ে যান" ? "bn"
+      : t && t.continue === "தொடரவும்" ? "ta"
+      : t && t.continue === "पुढे चालू ठेवा" ? "mr"
+      : t && t.continue === "కొనసాగించండి" ? "te"
+      : "en");
+
+  const langCopy = PROFILE_I18N[curLang] || PROFILE_I18N.en;
+  const qCopy = langCopy.questions;
+
   const fields = [
     {
       key: "age",
       icon: <UserCircle size={22} />,
-      title: "What is your age?",
-      hint: "Tell us your age in years.",
+      title: qCopy.age.title,
+      hint: qCopy.age.hint,
+      placeholder: qCopy.age.placeholder,
     },
     {
       key: "category",
       icon: <Users size={22} />,
-      title: "What category do you belong to?",
-      hint: "This helps identify schemes you may qualify for.",
+      title: qCopy.category.title,
+      hint: qCopy.category.hint,
+      options: qCopy.category.options,
     },
     {
       key: "income",
       icon: <IndianRupee size={22} />,
-      title: "What is your yearly income?",
-      hint: "Select the income range that best matches you.",
+      title: qCopy.income.title,
+      hint: qCopy.income.hint,
+      options: qCopy.income.options,
     },
     {
       key: "occupation",
       icon: <Briefcase size={22} />,
-      title: "What is your occupation?",
-      hint: "Choose the option that best describes your work.",
+      title: qCopy.occupation.title,
+      hint: qCopy.occupation.hint,
+      options: qCopy.occupation.options,
     },
     {
       key: "ideaCategory",
       icon: <Lightbulb size={22} />,
-      title: "What is your idea category?",
-      hint: "Choose the category that best matches your business idea.",
+      title: qCopy.ideaCategory.title,
+      hint: qCopy.ideaCategory.hint,
+      options: qCopy.ideaCategory.options,
     },
     {
       key: "location",
       icon: <MapPin size={22} />,
-      title: t.locationQuestion,
-      hint: t.locationHint,
+      title: t?.locationQuestion || qCopy.location.title,
+      hint: t?.locationHint || qCopy.location.hint,
+      placeholder: t?.locationPlaceholder || qCopy.location.placeholder,
     },
     {
       key: "idea",
       icon: <FileText size={22} />,
-      title: "Tell us about your idea",
-      hint: "Describe your complete idea. You can type it or speak it using the microphone.",
+      title: qCopy.idea.title,
+      hint: qCopy.idea.hint,
+      placeholder: qCopy.idea.placeholder,
     },
   ];
 
@@ -7780,7 +8282,7 @@ function ProfileScreen({
     ta: "ta-IN",
     mr: "mr-IN",
     te: "te-IN",
-  }[language] || "en-IN");
+  }[curLang] || "en-IN");
 
   const normalize = (text) =>
     String(text || "")
@@ -7841,13 +8343,13 @@ function ProfileScreen({
 
     if (field.key === "category") {
       const aliases = [
-        ["SC", ["sc", "scheduled caste", "schedule caste", "अनुसूचित जाति", "एससी"]],
-        ["ST", ["st", "scheduled tribe", "अनुसूचित जनजाति", "एसटी"]],
-        ["OBC", ["obc", "other backward", "अन्य पिछड़ा", "पिछड़ा वर्ग", "ओबीसी"]],
-        ["Woman", ["woman", "women", "female", "lady", "महिला", "औरत"]],
-        ["Minority", ["minority", "अल्पसंख्यक"]],
-        ["PwD", ["pwd", "disabled", "disability", "divyang", "दिव्यांग"]],
-        ["General", ["general", "open category", "सामान्य"]],
+        ["SC", ["sc", "scheduled caste", "schedule caste", "अनुसूचित जाति", "एससी", "তফসিলি জাতি", "பட்டியல் சாதி", "షెడ్యూల్డ్ కులం"]],
+        ["ST", ["st", "scheduled tribe", "अनुसूचित जनजाति", "एसटी", "তফসিলি উপজাতি", "பழங்குடியினர்", "షెడ్యూల్డ్ తెగ"]],
+        ["OBC", ["obc", "other backward", "अन्य पिछड़ा", "पिछड़ा वर्ग", "ओबीसी", "অনগ্রসর", "பிற்படுத்தப்பட்டோர்", "వెనుకబడిన తరగతి"]],
+        ["Woman", ["woman", "women", "female", "lady", "महिला", "औरत", "নারী", "பெண்", "మహిళ"]],
+        ["Minority", ["minority", "अल्पसंख्यक", "সংখ্যালঘু", "சிறுபான்மையினர்", "మైనారిటీ"]],
+        ["PwD", ["pwd", "disabled", "disability", "divyang", "दिव्यांग", "দিব্যাঙ্গ", "மாற்றுத்திறனாளி", "దివ్యాంగు"]],
+        ["General", ["general", "open category", "सामान्य", "সাধারণ", "பொது", "జనరల్"]],
       ];
       return aliases.find(([, words]) => words.some((word) => normalized.includes(word)))?.[0] || null;
     }
@@ -7856,39 +8358,42 @@ function ProfileScreen({
       const amount = parseIncome(text);
       if (amount !== null) return amount;
       const incomeAliases = [
-        ["Under ₹1 lakh", 100000],
-        ["₹1–2 lakh", 200000],
-        ["₹2–5 lakh", 500000],
-        ["₹5–10 lakh", 900000],
-        ["Above ₹10 lakh", 1200000],
+        ["Under ₹1 lakh", 100000, ["under", "कम", "নিচে", "குறைவு", "తక్కువ"]],
+        ["₹1–2 lakh", 200000, ["1-2", "एक से दो", "১-২", "1 to 2"]],
+        ["₹2–5 lakh", 500000, ["2-5", "दो से पांच", "২-৫", "2 to 5"]],
+        ["₹5–10 lakh", 900000, ["5-10", "पांच से दस", "৫-১০", "5 to 10"]],
+        ["Above ₹10 lakh", 1200000, ["above", "अधिक", "বেশি", "மேல்", "పైగా"]],
       ];
-      return incomeAliases.find(([label]) => normalize(label).includes(normalized) || normalized.includes(normalize(label)))?.[1] || null;
+      for (const [canonical, val, words] of incomeAliases) {
+        if (words.some((w) => normalized.includes(w))) return val;
+      }
+      return null;
     }
 
     if (field.key === "occupation") {
       const aliases = [
-        ["Student", ["student", "studying"]],
-        ["Salaried Employee", ["salaried", "salary", "employee", "job"]],
-        ["Self-employed", ["self employed", "self-employed", "freelancer", "freelance"]],
-        ["Business Owner", ["business owner", "businessman", "businesswoman", "entrepreneur", "business"]],
-        ["Farmer", ["farmer", "farming", "agriculture", "खेती", "किसान"]],
-        ["Artisan / Craftsperson", ["artisan", "craftsperson", "handicraft", "handicraft worker"]],
-        ["Unemployed", ["unemployed", "not working", "jobless"]],
-        ["Other", ["other"]],
+        ["Student", ["student", "studying", "छात्र", "विद्यार्थी", "ছাত্র", "மாணவர்", "విద్యార్థி"]],
+        ["Salaried Employee", ["salaried", "salary", "employee", "job", "नौकरी", "कर्मचारी", "வேலை", "ఉద్యోగి"]],
+        ["Self-employed", ["self employed", "self-employed", "freelancer", "freelance", "स्व-रोजगार", "স্বনিযুক্ত", "சுயதொழில்", "స్వయం ఉపాధి"]],
+        ["Business Owner", ["business owner", "businessman", "businesswoman", "entrepreneur", "business", "व्यापारी", "दुकानदार", "व्यवसाय", "வணிகம்", "వ్యాపారం"]],
+        ["Farmer", ["farmer", "farming", "agriculture", "खेती", "किसान", "কৃষক", "விவசாயி", "शेतकरी", "రైతు"]],
+        ["Artisan / Craftsperson", ["artisan", "craftsperson", "handicraft", "handicraft worker", "कारीगर", "शिल्पकार", "கைவினை", "చేతివృత్తి"]],
+        ["Unemployed", ["unemployed", "not working", "jobless", "बेरोजगार", "வேலையற்ற", "నిరుద్యోగి"]],
+        ["Other", ["other", "अन्य", "অন্যান্য", "மற்றவை", "इतर", "ఇతర"]],
       ];
       return aliases.find(([, words]) => words.some((word) => normalized.includes(word)))?.[0] || null;
     }
 
     if (field.key === "ideaCategory") {
       const aliases = [
-        ["Agriculture & Allied", ["agriculture", "farming", "dairy", "poultry", "livestock"]],
-        ["Food & Catering", ["food", "catering", "restaurant", "bakery", "cooking"]],
-        ["Retail & Trading", ["retail", "trading", "shop", "store"]],
-        ["Manufacturing", ["manufacturing", "factory", "production"]],
-        ["Handicrafts & Textiles", ["handicraft", "textile", "tailoring", "craft"]],
-        ["Services", ["service", "services", "consulting"]],
-        ["Technology & Digital", ["technology", "tech", "software", "digital", "app", "website"]],
-        ["Other", ["other"]],
+        ["Agriculture & Allied", ["agriculture", "farming", "dairy", "poultry", "livestock", "कृषि", "डेयरी", "पोल्ट्री", "शेती", "விவசாயம்", "వ్యవసాయం"]],
+        ["Food & Catering", ["food", "catering", "restaurant", "bakery", "cooking", "खानपान", "होटल", "भोजन", "உணவு", "ఆహారం"]],
+        ["Retail & Trading", ["retail", "trading", "shop", "store", "दुकान", "व्यापार", "சில்லறை", "రిటైల్"]],
+        ["Manufacturing", ["manufacturing", "factory", "production", "विनिर्माण", "कारखाना", "உற்பத்தி", "తయారీ"]],
+        ["Handicrafts & Textiles", ["handicraft", "textile", "tailoring", "craft", "हस्तशिल्प", "वस्त्र", "सिलाई", "கைவினை", "హస్తకళలు"]],
+        ["Services", ["service", "services", "consulting", "सेवा", "மின்னணு", "సేవలు"]],
+        ["Technology & Digital", ["technology", "tech", "software", "digital", "app", "website", "तकनीक", "डिजिटल", "தொழில்நுட்பம்"]],
+        ["Other", ["other", "अन्य", "অন্যান্য", "மற்றவை", "इतर", "ఇతర"]],
       ];
       return aliases.find(([, words]) => words.some((word) => normalized.includes(word)))?.[0] || null;
     }
@@ -7921,7 +8426,7 @@ function ProfileScreen({
 
   const startListening = () => {
     if (!recognitionCtor) {
-      setVoiceError("Voice recognition is not available in this browser. You can type or choose an option instead.");
+      setVoiceError(langCopy.voiceNotSupported);
       return;
     }
     setVoiceError("");
@@ -7933,58 +8438,69 @@ function ProfileScreen({
       recognition.interimResults = false;
       recognition.continuous = false;
       recognition.maxAlternatives = 3;
-      recognition.onstart = () => setListening(true);
-      recognition.onend = () => setListening(false);
+
+      recognition.onstart = () => {
+        setListening(true);
+        setVoiceError("");
+      };
+
+      recognition.onend = () => {
+        setListening(false);
+      };
+
       recognition.onerror = (event) => {
         setListening(false);
         if (event.error === "no-speech") {
-          setVoiceError("आवाज़ सुनाई नहीं दी। कृपया दोबारा बोलें या नीचे विकल्प चुनें। (No speech detected. Please speak into your microphone or choose an option.)");
+          setVoiceError("No speech detected. Please speak into your microphone or choose an option.");
         } else if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          setVoiceError("माइक्रोफ़ोन अनुमति आवश्यक है। कृपया ब्राउज़र में माइक की अनुमति दें। (Microphone permission needed. Please allow microphone access in your browser.)");
+          setVoiceError("Microphone permission needed. Please allow microphone access in your browser.");
         } else if (event.error !== "aborted") {
-          setVoiceError(`Voice input note: ${event.error}. Please try speaking again or choose an option below.`);
+          setVoiceError(`Voice input notice: ${event.error}. You can continue by typing or choosing an option.`);
         }
       };
+
       recognition.onresult = (event) => {
         const transcript = Array.from(event.results)
           .map((result) => result[0]?.transcript || "")
           .join(" ")
           .trim();
+
         setHeardText(transcript);
         const parsed = parseAnswer(transcript);
-        if (parsed !== null && parsed !== "") {
-          setProfile((current) => ({
-            ...current,
-            [field.key]: parsed,
-          }));
-          window.setTimeout(moveToNextQuestion, 450);
+
+        if (parsed !== null && parsed !== undefined && String(parsed).trim() !== "") {
+          choose(parsed);
+          setTimeout(() => {
+            moveToNextQuestion();
+          }, 650);
+        } else if (field.key === "idea" || field.key === "location") {
+          choose(transcript);
         } else {
-          setVoiceError(field.key === "idea"
-            ? "I could not capture your idea. Please try speaking again or type it below."
-            : "I could not match that answer. Please try again or choose an option below.");
+          setVoiceError(`Heard "${transcript}". Please choose one of the options below or repeat clearly.`);
         }
       };
+
       recognitionRef.current = recognition;
       recognition.start();
-    } catch {
+    } catch (err) {
       setListening(false);
-      setVoiceError("Could not start the microphone. Please allow microphone access and try again.");
+      setVoiceError("Could not initialize microphone. Please choose an option instead.");
     }
   };
 
-  useEffect(() => {
-    if (!autoStartVoice || autoStartHandledRef.current) {
-      if (!autoStartVoice) return undefined;
-      speakQuestion();
+  React.useEffect(() => {
+    setVoiceError("");
+    setHeardText("");
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
     }
-    return () => {
-      if (recognitionRef.current) recognitionRef.current.abort();
-      if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
-    };
-  }, [step, language]);
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, [step]);
 
-  useEffect(() => {
-    if (!autoStartVoice) return;
+  React.useEffect(() => {
+    if (!autoStartVoice || autoStartHandledRef.current) return;
     autoStartHandledRef.current = true;
     onVoiceStarted?.();
     speakQuestion(startListening);
@@ -7999,16 +8515,21 @@ function ProfileScreen({
 
   const renderOptions = (options) => (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 12 }}>
-      {options.map((item) => (
-        <Option
-          key={item}
-          c={c}
-          active={profile[field.key] === item}
-          onClick={() => choose(item)}
-        >
-          {item}
-        </Option>
-      ))}
+      {options.map((item) => {
+        const val = typeof item === "object" && item !== null ? item.value : item;
+        const lbl = typeof item === "object" && item !== null ? item.label : item;
+        const isActive = profile[field.key] === val || (typeof item === "object" && profile[field.key] === item.label);
+        return (
+          <Option
+            key={val}
+            c={c}
+            active={isActive}
+            onClick={() => choose(val)}
+          >
+            {lbl}
+          </Option>
+        );
+      })}
     </div>
   );
 
@@ -8019,10 +8540,10 @@ function ProfileScreen({
 
         <div style={{ textAlign: "center", marginTop: 30 }}>
           <div style={{ fontSize: 13, color: c.primary, fontWeight: 800, letterSpacing: .6 }}>
-            VOICE ASSISTANCE
+            {langCopy.badge}
           </div>
           <h1 style={{ fontSize: 34, margin: "7px 0", color: c.text }}>
-            Tell us about yourself
+            {langCopy.heading}
           </h1>
           <div style={{ color: c.muted, fontWeight: 700, fontSize: 13 }}>
             {step + 1} / {fields.length}
@@ -8058,13 +8579,13 @@ function ProfileScreen({
                   <Mic size={22} />
                 </button>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 850 }}>{listening ? "Listening..." : "Tap the microphone to answer"}</div>
+                  <div style={{ fontSize: 12, fontWeight: 850 }}>{listening ? langCopy.listening : langCopy.tapToAnswer}</div>
                   <div style={{ color: c.muted, fontSize: 11, marginTop: 3 }}>
-                    {heardText ? `Heard: “${heardText}”` : field.key === "idea" ? "Speak your complete idea naturally." : "Your spoken answer will be matched automatically."}
+                    {heardText ? `${langCopy.heardPrefix}“${heardText}”` : field.key === "idea" ? langCopy.ideaNatural : langCopy.answerMatchedAuto}
                   </div>
                 </div>
                 <button type="button" onClick={speakQuestion} style={{ ...secondaryButton(c), padding: "9px 11px", fontSize: 11 }}>
-                  <Volume2 size={15} /> Hear question
+                  <Volume2 size={15} /> {langCopy.hearQuestion}
                 </button>
               </div>
               {voiceError && <div style={{ color: c.danger, fontSize: 11, marginTop: 9, lineHeight: 1.5 }}>{voiceError}</div>}
@@ -8078,14 +8599,14 @@ function ProfileScreen({
                   max="100"
                   value={profile.age || ""}
                   onChange={(e) => choose(e.target.value)}
-                  placeholder="Enter your age"
+                  placeholder={field.placeholder || "Enter your age"}
                   style={inputStyle(c)}
                 />
               )}
 
-              {field.key === "category" && renderOptions(CATEGORY_OPTS)}
+              {field.key === "category" && renderOptions(field.options || CATEGORY_OPTS)}
 
-              {field.key === "income" && renderOptions([
+              {field.key === "income" && renderOptions(field.options || [
                 "Under ₹1 lakh",
                 "₹1–2 lakh",
                 "₹2–5 lakh",
@@ -8093,7 +8614,7 @@ function ProfileScreen({
                 "Above ₹10 lakh",
               ])}
 
-              {field.key === "occupation" && renderOptions([
+              {field.key === "occupation" && renderOptions(field.options || [
                 "Student",
                 "Salaried Employee",
                 "Self-employed",
@@ -8104,7 +8625,7 @@ function ProfileScreen({
                 "Other",
               ])}
 
-              {field.key === "ideaCategory" && renderOptions([
+              {field.key === "ideaCategory" && renderOptions(field.options || [
                 "Agriculture & Allied",
                 "Food & Catering",
                 "Retail & Trading",
@@ -8120,7 +8641,7 @@ function ProfileScreen({
                   type="text"
                   value={profile.location || ""}
                   onChange={(e) => setProfile((current) => ({ ...current, location: e.target.value }))}
-                  placeholder={t.locationPlaceholder}
+                  placeholder={field.placeholder || t.locationPlaceholder}
                   style={inputStyle(c)}
                 />
               )}
@@ -8129,7 +8650,7 @@ function ProfileScreen({
                 <textarea
                   value={profile.idea || ""}
                   onChange={(e) => choose(e.target.value)}
-                  placeholder="Type your complete business idea here, or use the microphone to speak it..."
+                  placeholder={field.placeholder || "Type your complete business idea here, or use the microphone to speak it..."}
                   rows={7}
                   style={{ ...inputStyle(c), resize: "vertical", minHeight: 150, lineHeight: 1.6 }}
                 />
