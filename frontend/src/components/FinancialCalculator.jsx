@@ -114,63 +114,71 @@ export function FinancialCalculator({
   const exceedsLimit = schemeMaxLoan !== null && loanAmount > schemeMaxLoan;
   const scenarioExceedsLimit = schemeMaxLoan !== null && scenarioLoan > schemeMaxLoan;
 
-  // 2. Fetch Authoritative Backend Calculations
+  // 2. Fetch Backend Calculations (non-blocking — runs silently in background)
+  // Local math results are shown immediately; backend enhances them if available.
   useEffect(() => {
     let isMounted = true;
-    const updateCalculations = async () => {
+    // Debounce to avoid spamming backend on every slider tick
+    const timer = setTimeout(async () => {
       setIsCalculating(true);
       try {
-        const emiRes = await calculateEmi({
-          principal: loanAmount,
-          annual_interest_rate: interestRate,
-          tenure_months: tenureYears * 12,
-          scheme_id: schemeId,
-        });
-
-        const whatIfRes = await simulateWhatIf({
-          scheme_id: schemeId,
-          base: {
-            loan_amount: loanAmount,
+        const [emiRes, whatIfRes, readinessRes] = await Promise.allSettled([
+          calculateEmi({
+            principal: loanAmount,
             annual_interest_rate: interestRate,
-            tenure_years: tenureYears,
-          },
-          scenario: {
-            loan_amount: scenarioLoan,
-            annual_interest_rate: scenarioRate,
-            tenure_years: scenarioTenure,
-          },
-          financial_profile: {
+            tenure_months: tenureYears * 12,
+            scheme_id: schemeId,
+          }),
+          simulateWhatIf({
+            scheme_id: schemeId,
+            base: {
+              loan_amount: loanAmount,
+              annual_interest_rate: interestRate,
+              tenure_years: tenureYears,
+            },
+            scenario: {
+              loan_amount: scenarioLoan,
+              annual_interest_rate: scenarioRate,
+              tenure_years: scenarioTenure,
+            },
+            financial_profile: {
+              monthly_income: monthlyIncome,
+              monthly_expenses: monthlyExpenses,
+              existing_emi: existingEmi,
+            },
+          }),
+          assessFinancialReadiness({
             monthly_income: monthlyIncome,
-            monthly_expenses: monthlyExpenses,
+            monthly_household_expenses: monthlyExpenses,
             existing_emi: existingEmi,
-          },
-        });
-
-        const readinessRes = await assessFinancialReadiness({
-          monthly_income: monthlyIncome,
-          monthly_household_expenses: monthlyExpenses,
-          existing_emi: existingEmi,
-          requested_loan_amount: loanAmount,
-          annual_interest_rate: interestRate,
-          tenure_months: tenureYears * 12,
-          scheme_id: schemeId,
-        });
+            requested_loan_amount: loanAmount,
+            annual_interest_rate: interestRate,
+            tenure_months: tenureYears * 12,
+            scheme_id: schemeId,
+          }),
+        ]);
 
         if (isMounted) {
-          if (emiRes && emiRes.is_valid) setBaseCalculation(emiRes);
-          if (whatIfRes && whatIfRes.success) setWhatIfResult(whatIfRes);
-          if (readinessRes && readinessRes.is_valid) setReadinessResult(readinessRes);
+          if (emiRes.status === "fulfilled" && emiRes.value?.is_valid) {
+            setBaseCalculation(emiRes.value);
+          }
+          if (whatIfRes.status === "fulfilled" && whatIfRes.value?.success) {
+            setWhatIfResult(whatIfRes.value);
+          }
+          if (readinessRes.status === "fulfilled" && readinessRes.value?.is_valid) {
+            setReadinessResult(readinessRes.value);
+          }
         }
       } catch (err) {
-        console.debug("Backend financial service notice:", err);
+        console.debug("Backend financial service (offline — using local math):", err);
       } finally {
         if (isMounted) setIsCalculating(false);
       }
-    };
+    }, 600);
 
-    updateCalculations();
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [
     loanAmount,

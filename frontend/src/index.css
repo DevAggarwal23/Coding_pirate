@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Scheme Saathi — Modern Accessible GovTech Theme System */
 :root {
   --primary: #087F5B;

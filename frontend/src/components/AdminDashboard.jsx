@@ -307,115 +307,191 @@ export default function AdminDashboard({ onBackToPortal }) {
   // ─────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between">
-        {/* Top Bar */}
-        <header className="bg-slate-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+      <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden flex flex-col">
+        {/* Animated Background Blobs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-amber-500/8 blur-3xl animate-pulse-slow" />
+          <div className="absolute top-1/3 -right-32 w-80 h-80 rounded-full bg-emerald-500/6 blur-3xl animate-pulse-slow" style={{ animationDelay: "1.5s" }} />
+          <div className="absolute -bottom-20 left-1/3 w-72 h-72 rounded-full bg-blue-500/5 blur-3xl animate-pulse-slow" style={{ animationDelay: "3s" }} />
+          {/* Grid lines */}
+          <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(248,196,96,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(248,196,96,0.03) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        </div>
+
+        {/* Top Navigation Bar */}
+        <header className="relative z-10 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/60 px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg font-bold text-slate-950 text-xl">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 text-slate-950 text-base font-black">
               🏛️
             </div>
             <div>
-              <h1 className="font-bold text-lg text-white leading-tight">
-                Scheme Saathi — Nodal Admin Portal
-              </h1>
-              <p className="text-xs text-slate-400">
-                Government of India | Ministry of Social Justice & Empowerment
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-white">Scheme Saathi</span>
+                <span className="px-1.5 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[9px] font-bold rounded uppercase tracking-wider">
+                  NODAL
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500">Government of India Portal</p>
             </div>
           </div>
           {onBackToPortal && (
             <button
               onClick={onBackToPortal}
-              className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors flex items-center gap-2 border border-slate-700"
+              className="px-3 py-1.5 text-xs bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all flex items-center gap-1.5 border border-slate-700/60 backdrop-blur-sm"
             >
-              ← Back to Beneficiary Portal
+              ← Beneficiary Portal
             </button>
           )}
         </header>
 
-        {/* Login Form Container */}
-        <main className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-8">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-3xl mb-3 shadow-inner">
-                🔐
+        {/* Main Content */}
+        <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-8">
+          <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border border-slate-800/80">
+
+            {/* Left Panel — Branding */}
+            <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-10 border-r border-slate-700/50">
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-2xl shadow-xl shadow-amber-500/30 mb-6">
+                  🏛️
+                </div>
+                <h1 className="text-3xl font-black text-white leading-tight mb-3">
+                  Nodal Operations<br />
+                  <span className="text-amber-400">Console</span>
+                </h1>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Authorized administrative access for scheme governance, partner routing, and application review.
+                </p>
               </div>
-              <h2 className="text-2xl font-bold text-white">Nodal Officer Sign In</h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Authorized administrative access for scheme, partner & application governance.
-              </p>
+
+              {/* Stats Block */}
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-4">Platform Overview</p>
+                {[
+                  { icon: "📜", label: "Statutory Schemes", value: "405+", color: "text-blue-400" },
+                  { icon: "🏦", label: "Channel Partners", value: "8 PSBs", color: "text-amber-400" },
+                  { icon: "🛡️", label: "Secure Audit Trail", value: "Live", color: "text-emerald-400" },
+                  { icon: "📊", label: "Applications Tracked", value: "Real-time", color: "text-purple-400" },
+                ].map(stat => (
+                  <div key={stat.label} className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700/40">
+                    <span className="text-lg">{stat.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-xs text-slate-400">{stat.label}</div>
+                    </div>
+                    <span className={`text-xs font-bold ${stat.color}`}>{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-[10px] text-slate-600">
+                SIH26092 — Smart Automation for Marginalized Entrepreneurs
+              </div>
             </div>
 
-            {loginError && (
-              <div className="mb-4 p-3 bg-red-950/50 border border-red-800/80 rounded-xl text-xs text-red-300 flex items-start gap-2">
-                <span>⚠️</span>
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Official Email / Username
-                </label>
-                <input
-                  type="text"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="admin@schemesaathi.gov.in"
-                  required
-                  className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Security Password
-                </label>
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  required
-                  className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors text-sm"
-                />
-              </div>
-
-              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-[11px] text-slate-400 space-y-1">
-                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <span>ℹ️</span> Authorized SIH2026 Admin Credentials:
+            {/* Right Panel — Login Form */}
+            <div className="bg-slate-900/95 backdrop-blur-xl p-8 sm:p-10">
+              <div className="mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-2xl mb-4">
+                  🔐
                 </div>
-                <div>User: <code className="text-amber-400">admin@schemesaathi.gov.in</code></div>
-                <div>Pass: <code className="text-amber-400">Admin@SIH2026!</code></div>
+                <h2 className="text-xl font-black text-white mb-1">Nodal Officer Sign In</h2>
+                <p className="text-xs text-slate-400">Enter your official credentials to access operations.</p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loginLoading}
-                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl transition-all shadow-lg hover:shadow-amber-500/20 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
-              >
-                {loginLoading ? (
-                  <>
-                    <span className="animate-spin">⏳</span> Authenticating Session...
-                  </>
-                ) : (
-                  <>
-                    <span>🛡️</span> Sign In to Operations Console
-                  </>
-                )}
-              </button>
-            </form>
+              {loginError && (
+                <div className="mb-5 p-3.5 bg-red-950/60 border border-red-800/70 rounded-xl text-xs text-red-300 flex items-start gap-2.5 animate-fade-in">
+                  <span className="mt-0.5 flex-shrink-0">⚠️</span>
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                {/* Email Field */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Official Email / Username
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">✉️</span>
+                    <input
+                      type="text"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="admin@schemesaathi.gov.in"
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:bg-slate-800 transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Security Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔑</span>
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 focus:bg-slate-800 transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Credentials Hint */}
+                <div className="p-3.5 bg-amber-950/30 border border-amber-800/40 rounded-xl text-[11px] text-slate-300 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-300/80 mb-1">
+                    <span>ℹ️</span> SIH2026 Demo Credentials
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Email:</span>
+                    <code className="text-amber-400 font-mono text-[10px]">admin@schemesaathi.gov.in</code>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Password:</span>
+                    <code className="text-amber-400 font-mono text-[10px]">Admin@SIH2026!</code>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-[0.98] text-slate-950 font-black rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2.5"
+                >
+                  {loginLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-slate-950/40 border-t-slate-950 rounded-full animate-spin" />
+                      Authenticating...
+                    </>
+                  ) : (
+                    <>
+                      <span>🛡️</span>
+                      Sign In to Operations Console
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Security Badge */}
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] text-slate-500">Secured with JWT • End-to-End Encrypted • Audit Logged</span>
+              </div>
+            </div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="text-center py-4 text-xs text-slate-500 border-t border-slate-900">
+        <footer className="relative z-10 text-center py-3 text-[10px] text-slate-700">
           SIH26092 — Smart Automation for Marginalized Entrepreneurs | Secure GovTech Operations
         </footer>
       </div>
     );
   }
+
 
   // ─────────────────────────────────────────────────────────────
   // 2. AUTHENTICATED DASHBOARD

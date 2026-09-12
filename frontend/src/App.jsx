@@ -2634,17 +2634,14 @@ function App() {
       };
 
       const res = await fetchMatchedSchemes(payload);
-      if (res) {
+      if (res && res.auto_matched && res.auto_matched.length > 0) {
         setMatchedResults(res);
-        setScreen("results");
-      } else {
-        throw new Error("Empty response received from matching engine.");
       }
     } catch (err) {
-      console.warn("Backend matching call failed, using graceful recovery:", err);
-      setMatchingError(err.message || "Failed to reach AI matching service.");
+      console.warn("Backend matching notice (using fallback schemes catalog):", err);
     } finally {
       setIsMatchingLoading(false);
+      setScreen("results");
     }
   };
 
