@@ -10,6 +10,9 @@
 | **Theme** | **Smart Automation** |
 | **Category** | **Software** |
 | **Core Value Proposition** | *"Don't just find a scheme. Find the right financial path."* |
+| **🌐 Live Web Application (Frontend)** | **[https://coding-pirate.vercel.app](https://coding-pirate.vercel.app)** *(Deployed on Vercel)* |
+| **⚡ Live API Service (Backend)** | **[https://coding-pirate.onrender.com](https://coding-pirate.onrender.com)** *(Deployed on Render)* |
+| **📖 Interactive API Docs** | **[https://coding-pirate.onrender.com/docs](https://coding-pirate.onrender.com/docs)** *(Swagger UI)* |
 
 ---
 
