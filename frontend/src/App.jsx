@@ -86,6 +86,58 @@ import {
 } from "./components/DesignSystem.jsx";
 import { GoogleAuthButton } from "./components/GoogleAuthButton.jsx";
 
+// ─── Global Error Boundary ─────────────────────────────────────────────────────
+// Prevents blank screens from unhandled React render errors.
+// Shows a friendly "Something went wrong" UI with Retry / Go Back options.
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, errorMessage: "" };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, errorMessage: error?.message || "Unknown error" };
+  }
+  componentDidCatch(error, info) {
+    console.error("[ErrorBoundary] Caught render error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      const bg = "#0D1512", surface = "#15201C", text = "#F1F5F2",
+        muted = "#AAB8B1", primary = "#35C59A", danger = "#E18179",
+        border = "#2B3B34";
+      return (
+        <div style={{ minHeight: "100vh", background: bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ maxWidth: 420, width: "100%", background: surface, borderRadius: 20, padding: 36, border: `1px solid ${border}`, textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+            <h2 style={{ color: text, fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
+              Something went wrong
+            </h2>
+            <p style={{ color: muted, fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+              An unexpected error occurred in this section. Your data is safe.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                onClick={() => this.setState({ hasError: false, errorMessage: "" })}
+                style={{ padding: "10px 22px", background: primary, color: "#0D1512", borderRadius: 10, border: "none", fontWeight: 800, cursor: "pointer", fontSize: 13 }}
+              >
+                🔄 Retry
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                style={{ padding: "10px 22px", background: "transparent", color: muted, borderRadius: 10, border: `1px solid ${border}`, fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+              >
+                ↩ Reload App
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 const THEMES = {
   light: {
     bg: "#F5F7F5",
@@ -3046,6 +3098,10 @@ function App() {
           setProfile={setProfile}
           profileStep={profileStep}
           setProfileStep={setProfileStep}
+          selectedScheme={selectedScheme}
+          selectedPartner={selectedPartner}
+          setSelectedPartner={setSelectedPartner}
+          onBack={() => setScreen("landing")}
           onStart={() => {
             setVoiceModalOpen(true);
           }}
@@ -3055,8 +3111,16 @@ function App() {
           }}
           onFinish={() => handleRunMatching(profile)}
           onAdmin={() => setScreen("admin")}
-          onBack={() => setScreen("landing")}
           onOpenScheme={(scheme) => { setSelectedScheme(scheme); setScreen("detail"); }}
+          onHandoffToDetail={(plan) => {
+            if (setFinancialPlan) setFinancialPlan(plan);
+            if (selectedScheme) setScreen("detail");
+            else { setFindSchemesMode(true); handleRunMatching(profile); }
+          }}
+          onEditProfile={() => {
+            setVoiceRequested(false);
+            setScreen("profile");
+          }}
           onTrackApplication={(appRecord) => {
             setActiveApplicationId(appRecord.application_id);
             setActiveApplicationData(appRecord);
@@ -3297,6 +3361,12 @@ function DashboardScreen({
   onOpenScheme,
   onTrackApplication,
   onAdmin,
+  onBack,
+  selectedScheme,
+  selectedPartner,
+  setSelectedPartner,
+  onHandoffToDetail,
+  onEditProfile,
 }) {
   const [loan, setLoan] = useState(500000);
   const [rate, setRate] = useState(8.5);
@@ -3692,32 +3762,32 @@ function DashboardScreen({
         <section style={{ minWidth: 0 }}>
           {activeNav === "Nearby Help"
             ? (
-              <NearbyHelpScreen
-                c={c}
-                t={t}
-                language={languageFromTranslation(t)}
-                profile={profile}
-                selectedScheme={selectedScheme}
-                selectedPartner={selectedPartner}
-                setSelectedPartner={setSelectedPartner}
-              />
+              <ErrorBoundary>
+                <NearbyHelpScreen
+                  c={c}
+                  t={t}
+                  language={languageFromTranslation(t)}
+                  profile={profile}
+                  selectedScheme={selectedScheme}
+                  selectedPartner={selectedPartner}
+                  setSelectedPartner={setSelectedPartner}
+                />
+              </ErrorBoundary>
             )
             : activeNav === "Calculator"
             ? (
-              <FinancialCalculator
-                c={c}
-                t={t}
-                scheme={selectedScheme}
-                profile={profile}
-                onHandoff={(plan) => {
-                  if (setFinancialPlan) setFinancialPlan(plan);
-                  if (selectedScheme) {
-                    setScreen("detail");
-                  } else {
-                    onFindSchemes();
-                  }
-                }}
-              />
+              <ErrorBoundary>
+                <FinancialCalculator
+                  c={c}
+                  t={t}
+                  scheme={selectedScheme}
+                  profile={profile}
+                  onHandoff={(plan) => {
+                    if (onHandoffToDetail) onHandoffToDetail(plan);
+                    else onFindSchemes();
+                  }}
+                />
+              </ErrorBoundary>
             )
             : activeNav === "Compare"
               ? (
@@ -3745,10 +3815,9 @@ function DashboardScreen({
                     profile={profile}
                     onEdit={() => {
                       setProfileStep(0);
-                      setVoiceRequested(false);
                       setQuestionsStarted(false);
                       setActiveNav("Dashboard");
-                      setScreen("profile");
+                      if (onEditProfile) onEditProfile();
                     }}
                   />
                 )
