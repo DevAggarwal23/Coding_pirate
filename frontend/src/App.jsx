@@ -64,8 +64,12 @@ import {
   getApplicationStatus,
   getApplicationHistory,
   getApplicationDetails,
+  getUserApplications,
 } from "./services/api/applicationApi.js";
 import { verifyDocument } from "./services/api/ocrApi.js";
+import { PartnerMap } from "./components/PartnerMap.jsx";
+import { FinancialCalculator } from "./components/FinancialCalculator.jsx";
+import { AiChatAssistant } from "./components/AiChatAssistant.jsx";
 
 const THEMES = {
   light: {
@@ -2580,6 +2584,8 @@ function App() {
   const [profileStep, setProfileStep] = useState(0);
   const [voiceRequested, setVoiceRequested] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState(null);
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [financialPlan, setFinancialPlan] = useState(null);
   const [docStatus, setDocStatus] = useState({});
   const [statusStep, setStatusStep] = useState(0);
   const [activeApplicationId, setActiveApplicationId] = useState(null);
@@ -2950,6 +2956,23 @@ function App() {
           onFinish={() => handleRunMatching(profile)}
           onBack={() => setScreen("landing")}
           onOpenScheme={(scheme) => { setSelectedScheme(scheme); setScreen("detail"); }}
+          onTrackApplication={(appRecord) => {
+            setActiveApplicationId(appRecord.application_id);
+            setActiveApplicationData(appRecord);
+            setSelectedScheme({
+              id: appRecord.scheme_id,
+              scheme_id: appRecord.scheme_id,
+              scheme_name: appRecord.scheme_name,
+              name: appRecord.scheme_name,
+            });
+            if (appRecord.partner_name || appRecord.partner_id) {
+              setSelectedPartner({
+                partner_id: appRecord.partner_id,
+                partner_name: appRecord.partner_name,
+              });
+            }
+            setScreen("status");
+          }}
         />
       )}
 
@@ -3032,6 +3055,11 @@ function App() {
           t={t}
           language={language || "en"}
           scheme={selectedScheme}
+          profile={profile}
+          selectedPartner={selectedPartner}
+          setSelectedPartner={setSelectedPartner}
+          financialPlan={financialPlan}
+          setFinancialPlan={setFinancialPlan}
           onBack={() => setScreen("results")}
           onApply={() => {
             setDocStatus({});
@@ -3047,6 +3075,8 @@ function App() {
           language={language || "en"}
           scheme={selectedScheme}
           profile={profile}
+          selectedPartner={selectedPartner}
+          financialPlan={financialPlan}
           onBack={() => setScreen("detail")}
           onSubmitSuccess={(appRecord) => {
             setActiveApplicationId(appRecord.application_id);
@@ -3057,13 +3087,15 @@ function App() {
         />
       )}
 
-      {screen === "status" && selectedScheme && (
+      {screen === "status" && (
         <StatusScreen
           c={c}
           t={t}
           language={language || "en"}
           scheme={selectedScheme}
           profile={profile}
+          selectedPartner={selectedPartner}
+          financialPlan={financialPlan}
           applicationId={activeApplicationId}
           applicationData={activeApplicationData}
           statusStep={statusStep}
@@ -3072,6 +3104,53 @@ function App() {
           onDashboard={() => setScreen("dashboard")}
         />
       )}
+
+      {/* Context-Aware AI Chatbot Assistant */}
+      <AiChatAssistant
+        c={c}
+        language={language || "en"}
+        profile={profile}
+        selectedScheme={selectedScheme}
+        financialPlan={financialPlan}
+        selectedPartner={selectedPartner}
+        applicationData={activeApplicationData}
+        onFindSchemes={() => {
+          setFindSchemesMode(true);
+          handleRunMatching(profile);
+        }}
+        onOpenScheme={(sch) => {
+          setSelectedScheme(sch);
+          setScreen("detail");
+        }}
+        onOpenCalculator={() => {
+          setScreen("dashboard");
+        }}
+        onOpenDocuments={() => {
+          if (selectedScheme) setScreen("upload");
+          else {
+            setFindSchemesMode(true);
+            handleRunMatching(profile);
+          }
+        }}
+        onOpenPartners={() => {
+          setScreen("dashboard");
+        }}
+        onTrackApplication={(appRecord) => {
+          if (appRecord) {
+            setActiveApplicationId(appRecord.application_id);
+            setActiveApplicationData(appRecord);
+            if (appRecord.scheme_id || appRecord.scheme_name) {
+              setSelectedScheme({
+                id: appRecord.scheme_id,
+                scheme_id: appRecord.scheme_id,
+                scheme_name: appRecord.scheme_name,
+                name: appRecord.scheme_name,
+              });
+            }
+          }
+          setScreen("status");
+        }}
+      />
 
       {/* Global Voice Assistant Modal */}
       <VoiceAssistantModal
@@ -3113,6 +3192,7 @@ function DashboardScreen({
   onFindSchemes,
   onFinish,
   onOpenScheme,
+  onTrackApplication,
 }) {
   const [loan, setLoan] = useState(500000);
   const [rate, setRate] = useState(8.5);
@@ -3487,12 +3567,31 @@ function DashboardScreen({
             ? (
               <NearbyHelpScreen
                 c={c}
+                t={t}
                 language={languageFromTranslation(t)}
                 profile={profile}
+                selectedScheme={selectedScheme}
+                selectedPartner={selectedPartner}
+                setSelectedPartner={setSelectedPartner}
               />
             )
             : activeNav === "Calculator"
-            ? renderCalculator()
+            ? (
+              <FinancialCalculator
+                c={c}
+                t={t}
+                scheme={selectedScheme}
+                profile={profile}
+                onHandoff={(plan) => {
+                  if (setFinancialPlan) setFinancialPlan(plan);
+                  if (selectedScheme) {
+                    setScreen("detail");
+                  } else {
+                    onFindSchemes();
+                  }
+                }}
+              />
+            )
             : activeNav === "Compare"
               ? (
                 <CompareScreen
@@ -3524,6 +3623,19 @@ function DashboardScreen({
                       setActiveNav("Dashboard");
                       setScreen("profile");
                     }}
+                  />
+                )
+                : activeNav === "Applications"
+                ? (
+                  <ApplicationsPanel
+                    c={c}
+                    language={languageFromTranslation(t)}
+                    onTrackApplication={(app) => {
+                      if (onTrackApplication) {
+                        onTrackApplication(app);
+                      }
+                    }}
+                    onNewApplication={() => onFindSchemes()}
                   />
                 )
                 : activeNav === "Saved Schemes"
@@ -3562,7 +3674,30 @@ function DashboardScreen({
 
 
 
-function NearbyHelpScreen({ c, language = "en", profile }) {
+function NearbyHelpScreen({
+  c,
+  t,
+  language = "en",
+  profile,
+  selectedScheme,
+  selectedPartner,
+  setSelectedPartner,
+}) {
+  return (
+    <div className="fade" style={{ paddingBottom: 35 }}>
+      <PartnerMap
+        c={c}
+        t={t}
+        scheme={selectedScheme}
+        profile={profile}
+        selectedPartner={selectedPartner}
+        setSelectedPartner={setSelectedPartner}
+      />
+    </div>
+  );
+}
+
+function LegacyNearbyHelpScreen({ c, language = "en", profile }) {
   const copy = NEARBY_COPY[language] || NEARBY_COPY.en;
   const location = String(profile?.location || "").trim();
   const [status, setStatus] = useState(location ? "loading" : "idle");
@@ -4498,6 +4633,220 @@ const DOCUMENTS_COPY = {
     docs: { aadhaar: "ఆధార్ కార్డు", pan: "PAN కార్డు", udyam: "వ్యాపార నమోదు / ఉద్యం సర్టిఫికేట్", caste: "కుల ధృవీకరణ పత్రం (SC)", photo: "ఫోటో (పాస్‌పోర్ట్ సైజ్)", bank: "బ్యాంక్ స్టేట్‌మెంట్", address: "చిరునామా రుజువు", income: "ఆదాయ ధృవీకరణ పత్రం" }
   },
 };
+
+function ApplicationsPanel({ c, language = "en", onTrackApplication, onNewApplication }) {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [lookupId, setLookupId] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+
+  const loadApps = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getUserApplications();
+      if (res && res.applications) {
+        setApplications(res.applications);
+      }
+    } catch (err) {
+      console.warn("Failed to load applications:", err);
+      setError(err.message || "Failed to load applications from server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApps();
+  }, []);
+
+  const handleLookup = async (e) => {
+    e?.preventDefault();
+    if (!lookupId.trim()) return;
+    setLookupLoading(true);
+    setLookupError("");
+    try {
+      const res = await getApplicationStatus(lookupId.trim());
+      if (res && res.application_id) {
+        onTrackApplication(res);
+      } else {
+        setLookupError("No application record found with this ID.");
+      }
+    } catch (err) {
+      setLookupError(err.message || "Application not found. Please verify ID format.");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const s = (status || "").toLowerCase();
+    if (s === "approved" || s === "disbursed") {
+      return { bg: `${c.success}18`, color: c.success, border: `${c.success}40`, text: s === "approved" ? "Approved" : "Disbursed" };
+    }
+    if (s === "under_review" || s === "review" || s === "submitted") {
+      return { bg: `${c.primary}18`, color: c.primary, border: `${c.primary}40`, text: s === "under_review" ? "Under Review" : "Submitted to Nodal Partner" };
+    }
+    if (s === "rejected") {
+      return { bg: `${c.danger}18`, color: c.danger, border: `${c.danger}40`, text: "Rejected" };
+    }
+    return { bg: `${c.accent}18`, color: c.accent, border: `${c.accent}40`, text: "Documents Pending" };
+  };
+
+  return (
+    <div className="fade">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 15, marginBottom: 22 }}>
+        <div>
+          <div style={{ color: c.primary, fontSize: 11, fontWeight: 850, letterSpacing: 0.7 }}>APPLICATIONS & AUDIT TIMELINE</div>
+          <h1 style={{ fontSize: 30, margin: "6px 0 4px", color: c.text, fontWeight: 900 }}>My Scheme Applications</h1>
+          <p style={{ color: c.muted, fontSize: 13, margin: 0 }}>Track real-time status, nodal partner routing, and review milestones.</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={loadApps}
+          disabled={loading}
+          style={{ ...secondaryButton(c), padding: "9px 16px", fontSize: 13 }}
+        >
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Lookup Bar */}
+      <div className="glass" style={{ borderRadius: 18, padding: "18px 22px", marginBottom: 22 }}>
+        <form onSubmit={handleLookup} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 240 }}>
+            <Search size={18} color={c.muted} />
+            <input
+              type="text"
+              placeholder="Search by Tracking ID (e.g. APP-2026-66711)..."
+              value={lookupId}
+              onChange={(e) => setLookupId(e.target.value)}
+              style={{ ...inputStyle(c), flex: 1, border: "none", background: "transparent", padding: "8px 0" }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={lookupLoading || !lookupId.trim()}
+            style={{ ...primaryButton(c), padding: "10px 18px", fontSize: 13 }}
+          >
+            {lookupLoading ? <RefreshCw size={15} className="animate-spin" /> : <FileCheck2 size={15} />}
+            Track Status
+          </button>
+        </form>
+        {lookupError && <div style={{ marginTop: 8, color: c.danger, fontSize: 12, fontWeight: 700 }}>⚠️ {lookupError}</div>}
+      </div>
+
+      {/* Content List */}
+      {loading ? (
+        <div className="glass" style={{ borderRadius: 20, padding: 40, textAlign: "center", color: c.muted }}>
+          <RefreshCw size={28} className="animate-spin" style={{ margin: "0 auto 12px", color: c.primary }} />
+          <div>Fetching live application records from secure backend...</div>
+        </div>
+      ) : applications.length === 0 ? (
+        <div className="glass" style={{ borderRadius: 20, padding: 40, textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 18, background: `${c.primary}15`, color: c.primary, display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+            <FileText size={26} />
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 8px" }}>No Submitted Applications Yet</h2>
+          <p style={{ color: c.muted, fontSize: 14, maxWidth: 440, margin: "0 auto 20px" }}>
+            You haven't submitted any scheme applications yet. Match with eligible government schemes and submit your application with verified documents.
+          </p>
+          <button
+            type="button"
+            onClick={onNewApplication}
+            style={{ ...primaryButton(c), padding: "12px 24px", fontSize: 14, margin: "0 auto" }}
+          >
+            <Search size={16} />
+            Explore & Match Schemes
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 16 }}>
+          {applications.map((app) => {
+            const badge = getStatusBadge(app.status);
+            const dateStr = app.submitted_at || app.created_at
+              ? new Date(app.submitted_at || app.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+              : "Recent";
+
+            return (
+              <div
+                key={app.application_id}
+                className="glass hover-card"
+                style={{
+                  borderRadius: 20,
+                  padding: "22px 26px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 16,
+                  border: `1.5px solid ${c.border}`,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 260 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: 15, color: c.primary }}>
+                      {app.application_id}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        padding: "3px 10px",
+                        borderRadius: 12,
+                        background: badge.bg,
+                        color: badge.color,
+                        border: `1px solid ${badge.border}`,
+                      }}
+                    >
+                      {badge.text}
+                    </span>
+                    <span style={{ fontSize: 12, color: c.muted }}>• {dateStr}</span>
+                  </div>
+
+                  <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px", color: c.text }}>
+                    {app.scheme_name || "Government Welfare Scheme"}
+                  </h3>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: c.muted, flexWrap: "wrap" }}>
+                    {app.partner_name && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <MapPin size={14} color={c.primary} />
+                        <strong>Partner:</strong> {app.partner_name}
+                      </span>
+                    )}
+                    {app.document_readiness && (
+                      <span>
+                        <strong>Readiness:</strong> {app.document_readiness.completed_required_documents}/{app.document_readiness.required_documents} Docs ({app.document_readiness.completion_percentage}%)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => onTrackApplication(app)}
+                    style={{ ...primaryButton(c), padding: "10px 18px", fontSize: 13 }}
+                  >
+                    <Clock size={15} />
+                    View Timeline
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function SavedSchemesPanel({ c, language, savedSchemes = [], onOpen }) {
   return (
     <div className="fade">
@@ -7373,9 +7722,16 @@ function DetailScreen({
   t,
   language,
   scheme,
+  profile,
+  selectedPartner,
+  setSelectedPartner,
+  financialPlan,
+  setFinancialPlan,
   onBack,
   onApply,
 }) {
+  const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [showFinanceModal, setShowFinanceModal] = useState(false);
   const translated =
     SCHEME_TRANSLATIONS[language]?.[scheme.id] ||
     SCHEME_TRANSLATIONS.en?.[scheme.id] || {
@@ -7507,6 +7863,249 @@ function DetailScreen({
             </div>
           </div>
 
+          {/* Financial Planning & EMI Estimator Card */}
+          <div
+            className="glass"
+            style={{
+              borderRadius: 24,
+              padding: 24,
+              marginTop: 20,
+              background: `${c.accent}08`,
+              border: `1.5px solid ${c.accent}30`,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    background: c.accent,
+                    color: "white",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <Calculator size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: c.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Financial Planning & EMI Estimator
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 850, color: c.text, marginTop: 2 }}>
+                    {financialPlan ? `Planned Loan: Rs. ${Number(financialPlan.loanAmount).toLocaleString("en-IN")} (~Rs. ${Number(financialPlan.monthlyEmi).toLocaleString("en-IN")}/mo)` : "Simulate EMI & Cashflow Readiness"}
+                  </div>
+                  <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
+                    {scheme?.max_loan_amount ? `Max Scheme Limit: Rs. ${Number(scheme.max_loan_amount).toLocaleString("en-IN")}` : "Evaluate monthly repayment & What-If scenarios"}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowFinanceModal(true)}
+                style={{
+                  ...secondaryButton(c),
+                  padding: "9px 16px",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Sliders size={15} color={c.accent} />
+                {financialPlan ? "Modify Financial Plan" : "Open Financial Simulator"}
+              </button>
+            </div>
+          </div>
+
+          {/* Financial Simulator Modal */}
+          {showFinanceModal && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.65)",
+                backdropFilter: "blur(4px)",
+                zIndex: 9999,
+                display: "grid",
+                placeItems: "center",
+                padding: 16,
+              }}
+              onClick={() => setShowFinanceModal(false)}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: 960,
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  background: c.bg,
+                  borderRadius: 24,
+                  padding: 24,
+                  border: `1px solid ${c.border}`,
+                  boxShadow: "0 25px 70px rgba(0,0,0,0.4)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 850, margin: 0 }}>
+                    Loan EMI & What-If Simulator
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowFinanceModal(false)}
+                    style={{
+                      border: "none",
+                      background: c.surface2,
+                      color: c.text,
+                      borderRadius: 10,
+                      padding: "6px 12px",
+                      fontWeight: 800,
+                      fontSize: 13,
+                    }}
+                  >
+                    Close & Apply Plan
+                  </button>
+                </div>
+                <FinancialCalculator
+                  c={c}
+                  t={t}
+                  scheme={scheme}
+                  profile={profile}
+                  onHandoff={(plan) => {
+                    if (setFinancialPlan) setFinancialPlan(plan);
+                    setShowFinanceModal(false);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Channel Partner Nodal Association Card */}
+          <div
+            className="glass"
+            style={{
+              borderRadius: 24,
+              padding: 24,
+              marginTop: 20,
+              background: `${c.primary}08`,
+              border: `1.5px solid ${c.primary}30`,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    background: c.primary,
+                    color: "white",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <Landmark size={22} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: c.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Authorized Nodal Channel Partner
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 850, color: c.text, marginTop: 2 }}>
+                    {selectedPartner?.partner_name || "Auto-routed District Nodal Authority"}
+                  </div>
+                  <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
+                    {selectedPartner?.location || selectedPartner?.address || (profile?.location || "Nearest District Lead Branch")}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPartnerModal(true)}
+                style={{
+                  ...secondaryButton(c),
+                  padding: "9px 16px",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <MapPin size={15} color={c.primary} />
+                {selectedPartner ? "Change Partner on Map" : "Find Nearest Partner on Map"}
+              </button>
+            </div>
+          </div>
+
+          {/* Modal / Dialog for Partner Map */}
+          {showPartnerModal && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.65)",
+                backdropFilter: "blur(4px)",
+                zIndex: 9999,
+                display: "grid",
+                placeItems: "center",
+                padding: 16,
+              }}
+              onClick={() => setShowPartnerModal(false)}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: 960,
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  background: c.bg,
+                  borderRadius: 24,
+                  padding: 24,
+                  border: `1px solid ${c.border}`,
+                  boxShadow: "0 25px 70px rgba(0,0,0,0.4)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 850, margin: 0 }}>
+                    Select Nodal Channel Partner
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowPartnerModal(false)}
+                    style={{
+                      border: "none",
+                      background: c.surface2,
+                      color: c.text,
+                      borderRadius: 10,
+                      padding: "6px 12px",
+                      fontWeight: 800,
+                      fontSize: 13,
+                    }}
+                  >
+                    Close & Select
+                  </button>
+                </div>
+                <PartnerMap
+                  c={c}
+                  t={t}
+                  scheme={scheme}
+                  profile={profile}
+                  selectedPartner={selectedPartner}
+                  setSelectedPartner={(p) => {
+                    if (setSelectedPartner) setSelectedPartner(p);
+                  }}
+                  onContinue={() => setShowPartnerModal(false)}
+                />
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={onApply}
@@ -7531,6 +8130,8 @@ function UploadScreen({
   language = "en",
   scheme,
   profile,
+  selectedPartner,
+  financialPlan,
   onBack,
   onSubmitSuccess,
 }) {
@@ -7806,16 +8407,18 @@ function UploadScreen({
       const schemeId = scheme?.id || scheme?.scheme_id || "standup-india";
       const schemeName = scheme?.scheme_name || scheme?.name || "Government Welfare Scheme";
 
-      // 1. Create Application Draft
+      // 1. Create Application Draft with Partner & Financial Plan Association
       const createPayload = {
         scheme_id: schemeId,
         scheme_name: schemeName,
+        partner_id: selectedPartner?.partner_id || null,
+        partner_name: selectedPartner?.partner_name || null,
         category: profile?.category || "General",
         income: profile?.income ? Number(profile.income) : 300000,
         state: profile?.location || profile?.state || "Uttar Pradesh",
         business_type: profile?.businessType || profile?.ideaCategory || "general_enterprise",
-        project_cost: profile?.project_cost ? Number(profile.project_cost) : 500000,
-        notes: "Submitted via Scheme Saathi AI onboarding portal with verified documents.",
+        project_cost: financialPlan?.loanAmount ? Number(financialPlan.loanAmount) : (profile?.project_cost ? Number(profile.project_cost) : 500000),
+        notes: `Submitted via Scheme Saathi AI onboarding portal with verified documents. Channel Partner: ${selectedPartner?.partner_name || "Auto-routed District Nodal Authority"}. ${financialPlan ? `Assessed Loan Plan: Rs. ${Number(financialPlan.loanAmount).toLocaleString("en-IN")}, Tenure: ${financialPlan.tenureYears} Yrs, Est. EMI: Rs. ${Number(financialPlan.monthlyEmi).toLocaleString("en-IN")}/mo.` : ""}`,
       };
 
       const createdApp = await createApplication(createPayload);
@@ -7908,6 +8511,130 @@ function UploadScreen({
             Upload required statutory certificates for <strong>{schemeTitle}</strong>.
             Scheme Saathi verifies document formatting and extracts key fields via AI OCR before forwarding to the authorized Nodal Partner.
           </p>
+
+          {/* Financial Plan & Readiness Badge */}
+          {financialPlan && (
+            <div
+              className="glass"
+              style={{
+                padding: "16px 20px",
+                borderRadius: 18,
+                marginBottom: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 12,
+                background: `${c.accent}0a`,
+                border: `1.5px solid ${c.accent}30`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: c.accent,
+                    color: "white",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <Calculator size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: c.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Assessed Financial Plan
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 850, color: c.text }}>
+                    Requested Loan: Rs. {Number(financialPlan.loanAmount).toLocaleString("en-IN")} ({financialPlan.tenureYears} Yrs @ {financialPlan.interestRate}%)
+                  </div>
+                  <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
+                    Estimated Monthly EMI: Rs. {Number(financialPlan.monthlyEmi).toLocaleString("en-IN")}/mo • Total Repayment: Rs. {Number(financialPlan.totalRepayment).toLocaleString("en-IN")}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 750,
+                  padding: "5px 12px",
+                  borderRadius: 10,
+                  background: `${c.success}18`,
+                  color: c.success,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <ShieldCheck size={14} />
+                Financial Assessment Attached
+              </div>
+            </div>
+          )}
+
+          {/* Designated Channel Partner Banner */}
+          <div
+            className="glass"
+            style={{
+              padding: "16px 20px",
+              borderRadius: 18,
+              marginBottom: 20,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+              background: `${c.primary}0c`,
+              border: `1.5px solid ${c.primary}30`,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  background: c.primary,
+                  color: "white",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Landmark size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: c.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Designated Nodal Processing Desk
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 850, color: c.text }}>
+                  {selectedPartner?.partner_name || "Authorized District Nodal Authority / Lead Branch"}
+                </div>
+                <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>
+                  {selectedPartner?.address || selectedPartner?.location || (profile?.location || "Uttar Pradesh")}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 750,
+                padding: "5px 12px",
+                borderRadius: 10,
+                background: `${c.success}18`,
+                color: c.success,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <ShieldCheck size={14} />
+              Nodal Partner Linked
+            </div>
+          </div>
 
           {/* Readiness Progress Card */}
           <div
@@ -8597,6 +9324,8 @@ function StatusScreen({
   language = "en",
   scheme,
   profile,
+  selectedPartner,
+  financialPlan,
   applicationId,
   applicationData,
   onHome,
@@ -8687,7 +9416,7 @@ function StatusScreen({
   };
 
   const schemeName = appDetails?.scheme_name || scheme?.scheme_name || scheme?.name || "Government Scheme";
-  const partnerName = appDetails?.partner_name || "Authorized District Channel Partner";
+  const partnerName = appDetails?.partner_name || selectedPartner?.partner_name || "Authorized District Channel Partner";
   const submittedAt = appDetails?.submitted_at
     ? new Date(appDetails.submitted_at).toLocaleString("en-IN", {
         dateStyle: "medium",
@@ -8988,6 +9717,20 @@ function StatusScreen({
               <div style={{ fontSize: 12, color: c.muted, fontWeight: 700 }}>ESTIMATED TIME</div>
               <div style={{ fontWeight: 800, fontSize: 15, marginTop: 3 }}>15 - 30 working days</div>
             </div>
+
+            <div style={{ padding: 14, borderRadius: 14, background: `${c.primary}12`, border: `1px solid ${c.primary}30` }}>
+              <div style={{ fontSize: 12, color: c.muted, fontWeight: 700 }}>ASSIGNED CHANNEL PARTNER</div>
+              <div style={{ fontWeight: 850, fontSize: 15, marginTop: 3, color: c.primary }}>{partnerName}</div>
+            </div>
+
+            {financialPlan && (
+              <div style={{ padding: 14, borderRadius: 14, background: `${c.accent}12`, border: `1px solid ${c.accent}30` }}>
+                <div style={{ fontSize: 12, color: c.muted, fontWeight: 700 }}>INDICATIVE LOAN & EMI</div>
+                <div style={{ fontWeight: 850, fontSize: 15, marginTop: 3, color: c.accent }}>
+                  Rs. {Number(financialPlan.loanAmount).toLocaleString("en-IN")} (~Rs. {Number(financialPlan.monthlyEmi).toLocaleString("en-IN")}/mo)
+                </div>
+              </div>
+            )}
           </div>
 
           <div

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # AI LLM Keys (Groq / Grok / Gemini)
     groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     grok_api_key: str = ""
     xai_api_key: str = ""
     gemini_api_key: str = ""

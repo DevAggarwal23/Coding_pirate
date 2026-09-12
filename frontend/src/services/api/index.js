@@ -12,3 +12,4 @@ export * from "./financeApi.js";
 export * from "./partnerApi.js";
 export * from "./documentApi.js";
 export * from "./schemeApi.js";
+export * from "./chatApi.js";

@@ -336,6 +336,7 @@ async def delete_application_document_endpoint(
 
 
 @router.get("/{application_id}/document-readiness", response_model=ApplicationReadinessMetrics)
+@router.get("/{application_id}/readiness", response_model=ApplicationReadinessMetrics)
 async def get_application_document_readiness_endpoint(
     application_id: str = Path(..., description="Target Application ID"),
     scheme_id: Optional[str] = Query(None, description="Optional associated Scheme ID"),
