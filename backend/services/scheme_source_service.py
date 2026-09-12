@@ -93,9 +93,10 @@ async def get_scheme_provenance(scheme_id: str, db: Optional[AsyncSession] = Non
     db_sources = []
     if db:
         try:
-            db_sources = await SchemeSourceRepository.get_by_scheme_id(db, scheme_id)
+            import asyncio
+            db_sources = await asyncio.wait_for(SchemeSourceRepository.get_by_scheme_id(db, scheme_id), timeout=0.5)
         except Exception as e:
-            logger.warning(f"Database query for scheme sources ({scheme_id}) failed: {e}")
+            logger.debug(f"Database query for scheme sources ({scheme_id}) bypassed: {e}")
 
     if db_sources:
         sources_list = [s.to_dict() for s in db_sources]

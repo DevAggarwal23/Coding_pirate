@@ -8,6 +8,7 @@ Run:  uvicorn main:app --reload
 Docs: http://localhost:8000/docs
 """
 
+import asyncio
 import time
 import logging
 from contextlib import asynccontextmanager
@@ -43,10 +44,10 @@ async def lifespan(app: FastAPI):
 
     # 1. Initialize database tables
     try:
-        await init_db()
+        await asyncio.wait_for(init_db(), timeout=2.0)
         logger.info("✅ Database tables ready")
     except Exception as e:
-        logger.error(f"❌ Database init failed: {e}")
+        logger.warning(f"⚠️ Database init skipped / timed out ({e}); utilizing local persistence & memory cache.")
 
     # 2. Load FAISS index
     try:

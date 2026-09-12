@@ -104,12 +104,13 @@ async def get_all_schemes(db: Optional[AsyncSession] = None) -> list[dict[str, A
     """
     if db:
         try:
-            schemes = await SchemeRepository.get_all(db, active_only=True)
+            import asyncio
+            schemes = await asyncio.wait_for(SchemeRepository.get_all(db, active_only=True), timeout=0.5)
             if schemes:
                 logger.info(f"Retrieved {len(schemes)} schemes from PostgreSQL database.")
                 return [s.to_dict() for s in schemes]
         except Exception as e:
-            logger.warning(f"Database query failed ({e}); falling back to local schemes data.")
+            logger.debug(f"Database query failed or timed out ({e}); falling back to local schemes data.")
 
     return _load_schemes_from_json()
 
@@ -118,11 +119,12 @@ async def get_scheme_by_id(scheme_id: str, db: Optional[AsyncSession] = None) ->
     """Retrieve single scheme by ID from database or fallback cache."""
     if db:
         try:
-            scheme = await SchemeRepository.get_by_id(db, scheme_id)
+            import asyncio
+            scheme = await asyncio.wait_for(SchemeRepository.get_by_id(db, scheme_id), timeout=0.5)
             if scheme:
                 return scheme.to_dict()
         except Exception as e:
-            logger.warning(f"Database query for scheme {scheme_id} failed ({e}).")
+            logger.debug(f"Database query for scheme {scheme_id} failed or timed out ({e}).")
 
     all_schemes = await get_all_schemes_cached(db)
     for s in all_schemes:

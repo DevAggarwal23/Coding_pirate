@@ -55,12 +55,16 @@ async def persist_nlp_extraction(
 
     if db:
         try:
-            await NLPExtractionRepository.create(db, {
-                **record_dict,
-                "id": uuid.UUID(extraction_id),
-            })
+            import asyncio
+            await asyncio.wait_for(
+                NLPExtractionRepository.create(db, {
+                    **record_dict,
+                    "id": uuid.UUID(extraction_id),
+                }),
+                timeout=0.5,
+            )
         except Exception as ex:
-            logger.warning(f"Database persistence for NLP extraction deferred: {ex}")
+            logger.debug(f"Database persistence for NLP extraction deferred: {ex}")
 
     return extraction_id
 
@@ -69,11 +73,12 @@ async def get_nlp_extraction(extraction_id: str, db: Optional[AsyncSession] = No
     """Fetch extraction by ID from database or memory buffer."""
     if db:
         try:
-            record = await NLPExtractionRepository.get_by_id(db, extraction_id)
+            import asyncio
+            record = await asyncio.wait_for(NLPExtractionRepository.get_by_id(db, extraction_id), timeout=0.5)
             if record:
                 return record.to_dict()
         except Exception as ex:
-            logger.warning(f"Database query for extraction {extraction_id} failed: {ex}")
+            logger.debug(f"Database query for extraction {extraction_id} bypassed: {ex}")
 
     for rec in _NLP_EXTRACTIONS_MEMORY:
         if rec["id"] == extraction_id:
@@ -91,13 +96,17 @@ async def list_nlp_extractions(
     """List extractions filtered by session or user from database or memory buffer."""
     if db:
         try:
-            records = await NLPExtractionRepository.list_by_session_or_user(
-                db, session_id=session_id, user_id=user_id, limit=limit, offset=offset
+            import asyncio
+            records = await asyncio.wait_for(
+                NLPExtractionRepository.list_by_session_or_user(
+                    db, session_id=session_id, user_id=user_id, limit=limit, offset=offset
+                ),
+                timeout=0.5,
             )
             if records:
                 return [r.to_dict() for r in records]
         except Exception as ex:
-            logger.warning(f"Database query for NLP extractions list failed: {ex}")
+            logger.debug(f"Database query for NLP extractions list bypassed: {ex}")
 
     results = _NLP_EXTRACTIONS_MEMORY
     if session_id:

@@ -7,12 +7,24 @@ class Base(DeclarativeBase):
     pass
 
 
+# Detect Supabase Transaction Pooler (port 6543) — requires prepared statements disabled
+_db_url = settings.database_url
+_is_supabase_transaction_pooler = (
+    "pooler.supabase.com" in _db_url and ":6543/" in _db_url
+)
+
+_connect_args = {}
+if _is_supabase_transaction_pooler:
+    # asyncpg prepared statements are not supported in Supabase transaction pool mode
+    _connect_args = {"statement_cache_size": 0}
+
 engine = create_async_engine(
-    settings.database_url,
+    _db_url,
     echo=settings.environment == "development",
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=5,
+    max_overflow=10,
+    connect_args=_connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(

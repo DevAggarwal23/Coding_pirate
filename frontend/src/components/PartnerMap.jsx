@@ -106,6 +106,23 @@ export function PartnerMap({
     }
   }, []);
 
+  // Map lifecycle cleanup — remove map instance on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {
+          // ignore cleanup errors
+        }
+        mapInstanceRef.current = null;
+        markersLayerRef.current = null;
+        routeLayerRef.current = null;
+        markersMapRef.current = {};
+      }
+    };
+  }, []);
+
   // 2. Fetch Partners from Backend Routing Engine
   const fetchPartners = async (coords = userCoords, district = activeDistrict, radius = radiusKm) => {
     setIsLoading(true);
@@ -416,7 +433,7 @@ export function PartnerMap({
       });
 
       polyline.bindTooltip(
-        `🛣️ Transit Route: ${targetPartner.distance_km} km (~${Math.max(1, Math.round((targetPartner.distance_km / 30) * 60))} mins)`,
+        `📏 Approximate Distance Corridor: ~${targetPartner.distance_km} km (Est. ~${Math.max(1, Math.round((targetPartner.distance_km / 30) * 60))} mins at avg 30 km/h — not a road route)`,
         { permanent: false, direction: "center" }
       );
 
@@ -922,10 +939,10 @@ export function PartnerMap({
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 6, color: c.primary, fontWeight: 750 }}>
                     <Route size={15} />
-                    <span>Transit Corridor Route</span>
+                    <span>Approximate Distance Corridor</span>
                   </div>
                   <div style={{ color: c.text, fontWeight: 650 }}>
-                    Est: ~{Math.max(1, Math.round((currentSelected.distance_km / 30) * 60))} mins travel time
+                    Est. ~{Math.max(1, Math.round((currentSelected.distance_km / 30) * 60))} mins (avg 30 km/h)
                   </div>
                 </div>
 

@@ -98,6 +98,7 @@ async def upload_document(
 
         # Attempt to persist in PostgreSQL if available
         try:
+            import asyncio
             app_doc = ApplicationDocument(
                 id=doc_record["document_id"],
                 application_id=application_id,
@@ -114,7 +115,7 @@ async def upload_document(
                 validation_method="format_check",
             )
             db.add(app_doc)
-            await db.commit()
+            await asyncio.wait_for(db.commit(), timeout=0.5)
         except Exception as db_err:
             try:
                 await db.rollback()

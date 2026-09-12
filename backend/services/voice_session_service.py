@@ -48,12 +48,16 @@ async def create_voice_session(
 
     if db:
         try:
-            await VoiceSessionRepository.create(db, {
-                **session_dict,
-                "id": uuid.UUID(record_id),
-            })
+            import asyncio
+            await asyncio.wait_for(
+                VoiceSessionRepository.create(db, {
+                    **session_dict,
+                    "id": uuid.UUID(record_id),
+                }),
+                timeout=0.5,
+            )
         except Exception as ex:
-            logger.warning(f"Database create voice session deferred: {ex}")
+            logger.debug(f"Database create voice session deferred: {ex}")
 
     return actual_session_id
 
@@ -71,7 +75,7 @@ async def complete_voice_session(
     if session_id in _VOICE_SESSIONS_MEMORY:
         _VOICE_SESSIONS_MEMORY[session_id].update({
             "transcript": transcript,
-            "transcription_confidence": confidence,
+            "transcription_confidence": round(float(confidence), 2),
             "language": language,
             "duration_seconds": duration_seconds,
             "processing_status": VoiceProcessingStatus.COMPLETED.value,
@@ -80,17 +84,21 @@ async def complete_voice_session(
 
     if db:
         try:
-            await VoiceSessionRepository.update_status(
-                db,
-                session_id_or_id=session_id,
-                processing_status=VoiceProcessingStatus.COMPLETED.value,
-                transcript=transcript,
-                confidence=confidence,
-                language=language,
-                duration_seconds=duration_seconds,
+            import asyncio
+            await asyncio.wait_for(
+                VoiceSessionRepository.update_status(
+                    db,
+                    session_id_or_id=session_id,
+                    processing_status=VoiceProcessingStatus.COMPLETED.value,
+                    transcript=transcript,
+                    confidence=confidence,
+                    language=language,
+                    duration_seconds=duration_seconds,
+                ),
+                timeout=0.5,
             )
         except Exception as ex:
-            logger.warning(f"Database complete voice session deferred: {ex}")
+            logger.debug(f"Database complete voice session deferred: {ex}")
 
 
 async def fail_voice_session(
@@ -109,25 +117,33 @@ async def fail_voice_session(
 
     if db:
         try:
-            await VoiceSessionRepository.update_status(
-                db,
-                session_id_or_id=session_id,
-                processing_status=VoiceProcessingStatus.FAILED.value,
-                error_code=error_code,
+            import asyncio
+            await asyncio.wait_for(
+                VoiceSessionRepository.update_status(
+                    db,
+                    session_id_or_id=session_id,
+                    processing_status=VoiceProcessingStatus.FAILED.value,
+                    error_code=error_code,
+                ),
+                timeout=0.5,
             )
         except Exception as ex:
-            logger.warning(f"Database fail voice session deferred: {ex}")
+            logger.debug(f"Database fail voice session deferred: {ex}")
 
 
 async def get_voice_session(session_id: str, db: Optional[AsyncSession] = None) -> Optional[dict[str, Any]]:
     """Retrieve voice session by ID."""
     if db:
         try:
-            record = await VoiceSessionRepository.get_by_session_id_or_id(db, session_id)
+            import asyncio
+            record = await asyncio.wait_for(
+                VoiceSessionRepository.get_by_session_id_or_id(db, session_id),
+                timeout=0.5,
+            )
             if record:
                 return record.to_dict()
         except Exception as ex:
-            logger.warning(f"Database query for voice session {session_id} failed: {ex}")
+            logger.debug(f"Database query for voice session {session_id} bypassed: {ex}")
 
     return _VOICE_SESSIONS_MEMORY.get(session_id)
 
@@ -141,13 +157,17 @@ async def list_voice_sessions(
     """List voice sessions with optional user filter."""
     if db:
         try:
-            records = await VoiceSessionRepository.list_sessions(
-                db, user_id=user_id, limit=limit, offset=offset
+            import asyncio
+            records = await asyncio.wait_for(
+                VoiceSessionRepository.list_sessions(
+                    db, user_id=user_id, limit=limit, offset=offset
+                ),
+                timeout=0.5,
             )
             if records:
                 return [r.to_dict() for r in records]
         except Exception as ex:
-            logger.warning(f"Database query for voice sessions list failed: {ex}")
+            logger.debug(f"Database query for voice sessions list bypassed: {ex}")
 
     results = list(_VOICE_SESSIONS_MEMORY.values())
     if user_id:
