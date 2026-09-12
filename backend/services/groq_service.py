@@ -390,21 +390,25 @@ def synthesize_offline_response(
     # Intent 4: Partner / "nearest partner" / "bank"
     if any(k in msg for k in ["partner", "bank", "nearest", "location", "शाखा", "पार्टनर", "नज़दीक"]):
         if pt and pt.partner_name:
+            dist_hi = f"• **दूरी:** लगभग {pt.distance_km} किमी\n" if pt.distance_km else ""
+            addr_hi = f"• **पता:** {pt.address}\n" if pt.address else ""
+            dist_en = f"• **Distance:** ~{pt.distance_km} km\n" if pt.distance_km else ""
+            addr_en = f"• **Location:** {pt.address}\n" if pt.address else ""
             if lang == "hi":
                 return (
                     f"आपके लिए निर्धारित / निकटतम चैनल पार्टनर:\n\n"
                     f"• **संस्थान:** {pt.partner_name}\n"
                     f"• **प्रकार:** {pt.partner_type or 'अधिकृत नोडल बैंक शाखा'}\n"
-                    f"{f'• **दूरी:** लगभग {pt.distance_km} किमी\n' if pt.distance_km else ''}"
-                    f"{f'• **पता:** {pt.address}\n' if pt.address else ''}\n"
+                    f"{dist_hi}"
+                    f"{addr_hi}\n"
                     "यह शाखा आपके आवेदन की भौतिक जांच और ऋण अग्रेषण का कार्य करेगी।"
                 )
             return (
                 f"Assigned / Recommended Channel Partner:\n\n"
                 f"• **Institution:** {pt.partner_name}\n"
                 f"• **Category:** {pt.partner_type or 'Authorized Nodal Partner Branch'}\n"
-                f"{f'• **Distance:** ~{pt.distance_km} km\n' if pt.distance_km else ''}"
-                f"{f'• **Location:** {pt.address}\n' if pt.address else ''}\n"
+                f"{dist_en}"
+                f"{addr_en}\n"
                 "This partner branch handles institutional appraisal and physical verification."
             )
         else:
@@ -415,19 +419,21 @@ def synthesize_offline_response(
     # Intent 5: Application Status / "application kaha tak pahucha"
     if any(k in msg for k in ["status", "application", "tracking", "kaha tak", "pahucha", "स्थिति", "आवेदन"]):
         if app and app.application_id:
+            partner_hi = f"• **अधिकृत पार्टनर:** {app.partner_name}\n" if app.partner_name else ""
+            partner_en = f"• **Assigned Partner:** {app.partner_name}\n" if app.partner_name else ""
             if lang == "hi":
                 return (
                     f"आपके आवेदन की वर्तमान स्थिति:\n\n"
                     f"• **ट्रैकिंग आईडी:** `{app.application_id}`\n"
                     f"• **स्थिति:** {app.status_label or app.status}\n"
-                    f"{f'• **अधिकृत पार्टनर:** {app.partner_name}\n' if app.partner_name else ''}"
+                    f"{partner_hi}"
                     f"• **अगला कदम:** {app.next_step or 'नोडल अधिकारी द्वारा दस्तावेज़ों की जांच की जा रही है।'}\n\n"
                     "आप 'Track Application' स्क्रीन पर पूरा ऑडिट टाइमलाइन देख सकते हैं।"
                 )
             return (
                 f"Current Status for Application `{app.application_id}`:\n\n"
                 f"• **Status:** {app.status_label or app.status}\n"
-                f"{f'• **Assigned Partner:** {app.partner_name}\n' if app.partner_name else ''}"
+                f"{partner_en}"
                 f"• **Next Milestone:** {app.next_step or 'Document review in progress by Nodal Officer.'}\n\n"
                 "You can inspect the full chronological audit timeline under the Status Tracker."
             )

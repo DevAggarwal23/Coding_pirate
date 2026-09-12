@@ -3,9 +3,8 @@
 Revision ID: d9bb7c2ef401
 Revises: c8aa6a1dc5d2
 Create Date: 2026-09-12 02:25:00.000000
-
 """
-Import sqlalchemy as sa
+import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 from typing import Sequence, Union
